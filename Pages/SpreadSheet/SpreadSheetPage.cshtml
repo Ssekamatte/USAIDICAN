@@ -1,0 +1,46 @@
+﻿@page "/SpreadSheetPage"
+@model USAIDICANBLAZOR.Pages.SpreadSheet.SpreadSheetPageModel
+@{
+}
+@addTagHelper *, Syncfusion.EJ2
+
+
+<!-- Syncfusion Essential JS 2 Styles -->
+@*<link rel="stylesheet" href="https://cdn.syncfusion.com/ej2/material.css" />*@
+<link href="~/EJ2/material.css" rel="stylesheet" />
+
+<!-- Syncfusion Essential JS 2 Scripts -->
+@*<script src="https://cdn.syncfusion.com/ej2/dist/ej2.min.js"></script>*@
+<script src="~/EJ2/ej2.min.js"></script>
+<style>
+    .e-ribbon {
+        background-color: #fafafa;
+        height: fit-content;
+    }
+</style>
+@Html.AntiForgeryToken()
+<ejs-spreadsheet id="spreadsheet" openUrl="/api/SpreedSheetApi" showRibbon="false" showFormulaBar="false" allowEditing="false" allowOpen="true" created="created">
+
+</ejs-spreadsheet>
+
+<script>
+    let DefaultData =@Html.Raw(Json.Serialize(ViewBag.DefaultData));
+    let filename =@Html.Raw(Json.Serialize(ViewBag.filename));
+    function created() {
+        /*let url = window.location.protocol + "//" + window.location.hostname + ":" + window.location.port + "/DownloadReport/MTSPREPORT.xlsx";*/
+        let url = window.location.protocol + "//" + window.location.hostname + ":" + window.location.port + "/DownloadReport/" + filename;
+        /*alert(url);*/
+        var spreadsheet = ej.base.getComponent(document.getElementById('spreadsheet'), 'spreadsheet');
+        fetch(url) // fetch the remote url
+            .then((response) => {
+                response.blob().then((fileBlob) => { // convert the excel file to blob
+                    var file = new File([fileBlob], "Sample.xlsx"); //convert the blob into file
+                    spreadsheet.open({ file: file }); // open the file into Spreadsheet
+                })
+            })
+    }
+
+</script>
+
+<!-- Syncfusion Essential JS 2 ScriptManager -->
+<ejs-scripts></ejs-scripts>

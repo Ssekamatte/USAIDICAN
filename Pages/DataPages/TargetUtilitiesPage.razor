@@ -1,0 +1,905 @@
+﻿@page "/AddUpdateTarget"
+@using USAIDICANBLAZOR.Models;
+@using System.Collections;
+@using Microsoft.EntityFrameworkCore;
+@using Syncfusion.Blazor.Data;
+@using System.IO;
+@using Syncfusion.DocIO.DLS;
+@using Syncfusion.DocIORenderer;
+@using Syncfusion.Pdf;
+@inject USAID_ICANContext _context;
+@inject NavigationManager Navigation;
+@using USAIDICANBLAZOR.Data;
+@inject UserManagement userManagement;
+@using Microsoft.AspNetCore.Hosting;
+@inject IWebHostEnvironment hostingEnv;
+@using System.Text.RegularExpressions;
+
+
+    <style>
+        h4 {
+            background-color: black;
+            color: whitesmoke;
+            padding: 10px;
+        }
+
+        td {
+            padding: 10px;
+        }
+
+        h3 {
+            color: red;
+        }
+
+        .pp {
+            color: ghostwhite;
+            background-color: #6F1E51;
+            padding: 10px;
+        }
+    </style>
+
+    <ol class="breadcrumb" style="margin-top:5px;">
+        <li class="breadcrumb-item active" style="width: 100%; background-color: #a1b741; color: ghostwhite; font-family: Cambria; padding: 5px; font: bolder;"> <strong>Add/Update Targets</strong></li>
+    </ol>
+
+    <div class="row">
+        <div class="col-lg-12 control-section">
+            <SfToast @ref="ToastObj" ID="toast_type">
+                <ToastPosition X="@ToastPosition"></ToastPosition>
+            </SfToast>
+        </div>
+    </div>
+
+
+    @{
+        var Div = (new string[] { "RegionDescription", "DistrictDescription", "Subcounty", "Year" });
+    }
+
+
+    <div class="form-row">
+        <div class="form-group col-md-12">
+            <SfAccordion ExpandMode="@ExpandMode.Single">
+                <AccordionItems>
+                    <AccordionItem Expanded="true">
+                        <HeaderTemplate>Search Panel</HeaderTemplate>
+                        <ContentTemplate>
+                            <div style="padding:10px;">
+                                <EditForm Model="@InputModel" OnValidSubmit="@SearchRecords">
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <p>Region</p>
+                                            <SfMultiSelect @bind-Value="@InputModel.RegionId" TValue="int?[]" TItem="View2022ARegions" AllowFiltering="true" Placeholder="Please select" Mode="@VisualMode.CheckBox" DataSource="@RegionData" ShowSelectAll="true" EnableSelectionOrder="true" ShowDropDownIcon="true" FilterBarPlaceholder="Search Region" FloatLabelType="FloatLabelType.Never" PopupHeight="350px">
+                                                <MultiSelectFieldSettings Value="@nameof(View2022ARegions.RegionId)" Text="@nameof(View2022ARegions.Region)"></MultiSelectFieldSettings>
+                                                <MultiSelectEvents TValue="int?[]" TItem="View2022ARegions" ValueChange="OnRegionChange"></MultiSelectEvents>
+                                            </SfMultiSelect>
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <p>District</p>
+                                            <SfMultiSelect @bind-Value="@InputModel.DistrictId" Enabled="@DistrictEnabled" TValue="int?[]" TItem="ViewADistricts" AllowFiltering="true" Placeholder="Please select" Mode="@VisualMode.CheckBox" DataSource="@DistrictData" ShowSelectAll="true" EnableSelectionOrder="true" ShowDropDownIcon="true" FilterBarPlaceholder="Search District" FloatLabelType="FloatLabelType.Never" PopupHeight="350px">
+                                                <MultiSelectFieldSettings Value="@nameof(ViewADistricts.DistrictId)" Text="@nameof(ViewADistricts.District)"></MultiSelectFieldSettings>
+                                                <MultiSelectEvents TValue="int?[]" TItem="ViewADistricts" ValueChange="OnDistrictChange"></MultiSelectEvents>
+                                            </SfMultiSelect>
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <p>Subcounty</p>
+                                            <SfMultiSelect @bind-Value="@InputModel.SubcountyId" Enabled="@SubcountyEnabled" TValue="int?[]" TItem="ViewASubcounties" AllowFiltering="true" Placeholder="Please select" Mode="@VisualMode.CheckBox" DataSource="@SubcountyData" ShowSelectAll="true" EnableSelectionOrder="true" ShowDropDownIcon="true" FilterBarPlaceholder="Search Subcounty" FloatLabelType="FloatLabelType.Never" PopupHeight="350px">
+                                                <MultiSelectFieldSettings Value="@nameof(ViewASubcounties.SubcountyId)" Text="@nameof(ViewASubcounties.Subcounty)"></MultiSelectFieldSettings>
+                                            </SfMultiSelect>
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <p>Year</p>
+                                            <SfMultiSelect @bind-Value="@InputModel.Year" TValue="int?[]" TItem="AYear" AllowFiltering="true" Placeholder="Please select" Mode="@VisualMode.CheckBox" DataSource="@YearData" ShowSelectAll="true" EnableSelectionOrder="true" ShowDropDownIcon="true" FilterBarPlaceholder="Search Year" FloatLabelType="FloatLabelType.Never" PopupHeight="350px">
+                                                <MultiSelectFieldSettings Value="@nameof(AYear.YearId)" Text="@nameof(AYear.YearName)"></MultiSelectFieldSettings>
+                                            </SfMultiSelect>
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <p>Indicator</p>
+                                            <SfMultiSelect @bind-Value="@InputModel.IndicatorId" TValue="int?[]" TItem="OnaATargets" AllowFiltering="true" FilterType="Syncfusion.Blazor.DropDowns.FilterType.Contains" Placeholder="Please select" Mode="@VisualMode.CheckBox" DataSource="@IndData" ShowSelectAll="true" EnableSelectionOrder="true" ShowDropDownIcon="true" FilterBarPlaceholder="Search Indicator" FloatLabelType="FloatLabelType.Never" PopupHeight="350px">
+                                                <MultiSelectFieldSettings Value="@nameof(OnaATargets.IndicatorId)" Text="@nameof(OnaATargets.IndicatorDescription)"></MultiSelectFieldSettings>
+                                            </SfMultiSelect>
+                                        </div>
+                                        <div class="form-group col-md-3">
+                                            <BSButton Color="Color.Primary" ButtonType="BlazorStrap.ButtonType.Submit">Search</BSButton>
+                                            <BSButton Color="Color.Secondary" ButtonType="BlazorStrap.ButtonType.Button" @onclick="ClearSearchBtnClick">Clear Search</BSButton>
+                                        </div>
+                                        <div class="form-group col-md-12">
+                                            <DataAnnotationsValidator />
+                                            <ValidationSummary />
+                                        </div>
+                                    </div>
+                                </EditForm>
+                            </div>
+                        </ContentTemplate>
+                    </AccordionItem>
+                </AccordionItems>
+            </SfAccordion>
+        </div>
+
+        <div class="form-group col-md-12">
+            <SfGrid ID="Grid" @ref="TargetGrid" TValue="View2022OnaTargetsUpdated" Query="@MainQuery"
+                    Toolbar="@ToolbarMenu" AllowGrouping="true" ShowColumnChooser="true" AllowTextWrap="true"
+                    AllowPaging="true" AllowFiltering="true" GridLines="GridLine.Both" AllowSelection="true">
+                <GridGroupSettings Columns="@Div" ShowDropArea="false">
+                    <CaptionTemplate>
+                        @{
+                            var dvn = (context as CaptionTemplateContext);
+                            string _field = string.Empty;
+                            if (dvn.Field.Contains("Region"))
+                            {
+                                _field = "Region";
+                            }
+                            else if (dvn.Field.Contains("District"))
+                            {
+                                _field = "District";
+                            }
+                            else if (dvn.Field.Contains("Subcounty"))
+                            {
+                                _field = "Subcounty";
+                            }
+                            else if (dvn.Field.Contains("Year")) 
+                            {
+                                _field = "Year";
+                            }
+                                <div><p class="pp"><strong>@_field: @dvn.Key</strong></p></div>
+                        }
+
+                    </CaptionTemplate>
+                </GridGroupSettings>
+                <SfDataManager AdaptorInstance="@typeof(TargetAdapter)" Adaptor="Adaptors.CustomAdaptor"></SfDataManager>
+                <GridSelectionSettings Mode="Syncfusion.Blazor.Grids.SelectionMode.Row" Type="Syncfusion.Blazor.Grids.SelectionType.Single"></GridSelectionSettings>
+                <GridSearchSettings IgnoreCase="true"></GridSearchSettings>
+                <GridEvents OnActionBegin="OnTargetActionBegin" OnActionComplete="TargetActionComplete" TValue="View2022OnaTargetsUpdated"></GridEvents>
+                <GridEditSettings AllowAdding="true" AllowDeleting="false" AllowEditing="true" Mode="@EditMode.Dialog">
+                    <HeaderTemplate>
+                        @{
+                            var text = GetTargetHeader((context as View2022OnaTargetsUpdated));
+                                <div class="headerbandimg" /><span>@text</span>
+                        }
+                    </HeaderTemplate>
+                    <Template Context="SubcountyContext">
+                        @{
+                            TargetData = (SubcountyContext as View2022OnaTargetsUpdated);
+                                <div style="padding:15px;">
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6" hidden>
+                                            <SfTooltip @ref="TooltipObj" ID="Tooltip" Target=".e-list-item .name[title]">
+                                            </SfTooltip>
+                                        </div>
+                                        <div class="form-group col-md-12" hidden>
+                                            <SfNumericTextBox ID="TargetId" @bind-Value="@(TargetData.TargetId)" Enabled="false" Placeholder="Target Id" Format="N0" FloatLabelType="FloatLabelType.Always"></SfNumericTextBox>
+                                        </div>
+
+                                        <div class="form-group col-md-6">
+                                            <SfDropDownList ID="IndicatorId" @bind-Value="@(TargetData.IndicatorId)" TItem="OnaATargets" AllowFiltering="true" FilterType="Syncfusion.Blazor.DropDowns.FilterType.Contains" TValue="int?" DataSource="@IndData" Placeholder="Indicator" Enabled="@IndicatorBool" FloatLabelType="FloatLabelType.Always">
+                                                <DropDownListFieldSettings Value="@nameof(OnaATargets.IndicatorId)" Text="@nameof(OnaATargets.IndicatorDescription)"></DropDownListFieldSettings>
+                                                <DropDownListTemplates TItem="OnaATargets">
+                                                    <ItemTemplate>
+                                                        <div class="name" title="@((context as OnaATargets).IndicatorDescription)"> @((context as OnaATargets).IndicatorDescription) </div>
+                                                    </ItemTemplate>
+                                                </DropDownListTemplates>
+                                                <DropDownListEvents TValue="int?" TItem="OnaATargets" Opened="OnOpen" OnClose="OnClose"></DropDownListEvents>
+                                            </SfDropDownList>
+                                           @if (UserRole.Contains("ADMINISTRATOR",StringComparison.OrdinalIgnoreCase) || UserRole.Contains("REGIONAL M&E OFFICER",StringComparison.OrdinalIgnoreCase))
+                                           { 
+                                            <SfButton CssClass="btn-primary btn-block" OnClick="@AddNewIndicatorbtnClick">Add New Indicator</SfButton>
+                                           }
+                                    
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <SfDropDownList ID="Region" @bind-Value="@(TargetData.Region)" TItem="View2022ARegions" AllowFiltering="true" TValue="string" DataSource="@RegionData" Placeholder="Region" Enabled="@RegionBool" FloatLabelType="FloatLabelType.Always">
+                                                <DropDownListFieldSettings Value="@nameof(View2022ARegions.Region)" Text="@nameof(View2022ARegions.Region)"></DropDownListFieldSettings>
+                                                <DropDownListEvents TItem="View2022ARegions" TValue="string" ValueChange="ChangeDistrict"></DropDownListEvents>
+                                            </SfDropDownList>
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <SfDropDownList ID="District" @bind-Value="@(TargetData.District)" TItem="ViewADistricts" Enabled="@DistrictDD" AllowFiltering="true" TValue="string" DataSource="@DistrictData" Placeholder="District" FloatLabelType="FloatLabelType.Always" Query="@DistricttQuery">
+                                                <DropDownListFieldSettings Value="@nameof(ViewADistricts.District)" Text="@nameof(ViewADistricts.District)"></DropDownListFieldSettings>
+                                                <DropDownListEvents TItem="ViewADistricts" TValue="string" ValueChange="ChangeSubcounty"></DropDownListEvents>
+                                            </SfDropDownList>
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <SfDropDownList ID="Subcounty" @bind-Value="@(TargetData.Subcounty)" TItem="ViewASubcounties" Enabled="@SubcountyDD" AllowFiltering="true" TValue="string" DataSource="@SubcountyData" Placeholder="Subcounty" FloatLabelType="FloatLabelType.Always" Query="@SubcounttyQuery">
+                                                <DropDownListFieldSettings Value="@nameof(ViewASubcounties.Subcounty)" Text="@nameof(ViewASubcounties.Subcounty)"></DropDownListFieldSettings>
+                                            </SfDropDownList>
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <SfDropDownList ID="Year" @bind-Value="@(TargetData.Year)" TItem="AYear" AllowFiltering="true" TValue="int?" DataSource="@YearData" Placeholder="Year" Enabled="@YearBool" FloatLabelType="FloatLabelType.Always">
+                                                <DropDownListFieldSettings Value="@nameof(AYear.YearId)" Text="@nameof(AYear.YearName)"></DropDownListFieldSettings>
+                                            </SfDropDownList>
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <SfNumericTextBox ID="Target" @bind-Value="@(TargetData.Target)" Placeholder="Target" Format="N0" Enabled="@TargetBool" FloatLabelType="FloatLabelType.Always"></SfNumericTextBox>
+                                        </div>
+                                        <div class="form-group col-md-12">
+                                            <SfDialog @ref="@IndicatorDialog" Height="auto" Width="80%" AllowDragging="true" Target=".mainbody" ShowCloseIcon="true" IsModal="true" Visible="false">
+                                                <DialogTemplates>
+                                                    <Header>
+                                                        <div id="template" title="New Indicator" class="e-icon-settings">New Group</div>
+                                                    </Header>
+                                                    <Content>
+                                                        <div style="padding:10px">
+                                                            <EditForm Model="@NewIndicatorModel">
+                                                                <div class="form-row">
+                                                                    <div class="form-group col-md-12" hidden>
+                                                                        <SfNumericTextBox ID="IndicatorId" @bind-Value="@(NewIndicatorModel.IndicatorId)" Enabled="false" Placeholder="Indicator Id" Format="N0" FloatLabelType="FloatLabelType.Always"></SfNumericTextBox>
+                                                                    </div>
+                                                                    <div class="form-group col-md-12">
+                                                                        <p>Indicator</p>
+                                                                        <SfTextBox Multiline="false" @bind-Value="@(NewIndicatorModel.IndicatorDescription)" Enabled="true" Placeholder="Indicator" FloatLabelType="FloatLabelType.Never"></SfTextBox>
+                                                                    </div>
+                                                                </div>
+                                                            </EditForm>
+                                                        </div>
+                                                    </Content>
+                                                    <FooterTemplate>
+                                                        <BSButton Class="btn-secondary" @onclick="@SaveNewIndicatorbtnClick">Add Indicator</BSButton>
+                                                    </FooterTemplate>
+                                                </DialogTemplates>
+                                            </SfDialog>
+                                        </div>
+                                    </div>
+                                </div>
+                        }
+                    </Template>
+                </GridEditSettings>
+                <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+                <GridPageSettings PageSize="20"></GridPageSettings>
+                <GridColumns>
+                    <GridColumn Type="ColumnType.CheckBox" Width="50"></GridColumn>
+                    <GridColumn Field=@nameof(View2022OnaTargetsUpdated.TargetId) HeaderText="Target Id" TextAlign="TextAlign.Left" IsPrimaryKey="true" IsIdentity="true" Visible="false" Width="100"></GridColumn>
+                    <GridColumn Field=@nameof(View2022OnaTargetsUpdated.RegionDescription) HeaderText="Region"></GridColumn>
+                    <GridColumn Field=@nameof(View2022OnaTargetsUpdated.DistrictDescription) HeaderText="District"></GridColumn>
+                    <GridColumn Field=@nameof(View2022OnaTargetsUpdated.Subcounty) HeaderText="Subcounty"></GridColumn>
+                    <GridColumn Field=@nameof(View2022OnaTargetsUpdated.Year) HeaderText="Year"></GridColumn>
+                    <GridColumn Field=@nameof(View2022OnaTargetsUpdated.IndicatorDescription) HeaderText="Indicator" Width="150px"></GridColumn>
+                    <GridColumn Field=@nameof(View2022OnaTargetsUpdated.Target) HeaderText="Target" Width="50px"></GridColumn>
+                </GridColumns>
+            </SfGrid>
+        </div>
+    </div>
+
+@code {
+    #region Toasters
+    public static string ToastContent { get; set; }
+    SfToast ToastObj;
+    SfToast DeleteToastObj;
+    private string ToastPosition = "Right";
+    private int AlarmTimeout { get; set; } = 120000;
+    private List<ToastModel> Toast = new List<ToastModel>
+{
+        new ToastModel{ Title = "Warning!", Content=ToastContent, CssClass="e-toast-warning", Icon="e-warning toast-icons" },
+        new ToastModel{ Title = "Success!", Content=ToastContent, CssClass="e-toast-success", Icon="e-success toast-icons" },
+        new ToastModel{ Title = "Error!", Content=ToastContent, CssClass="e-toast-danger", Icon="e-error toast-icons" },
+        new ToastModel{ Title = "Information!", Content=ToastContent, CssClass="e-toast-info", Icon="e-info toast-icons" }
+    };
+    #endregion Toasters
+
+    private static View2022OnaTargetsUpdated TargetData { get; set; }
+    public string ButtonText { get; set; }
+    private SfGrid<View2022OnaTargetsUpdated> TargetGrid;
+    public Query MainQuery = new Query();
+    private List<View2022ARegions> RegionData { get; set; }
+    private List<ViewADistricts> DistrictData { get; set; }
+    private List<ViewASubcounties> SubcountyData { get; set; }
+    List<OnaATargets> IndData { get; set; }
+    private List<AYear> YearData { get; set; }
+    public bool DistrictDD = false;
+    public bool SubcountyDD = false;
+    public Query DistricttQuery { get; set; } = null;
+    public Query SubcounttyQuery { get; set; } = null;
+    private TargetUtilitiesSearchPanel InputModel = new();
+    bool DistrictEnabled { get; set; } = false;
+    bool SubcountyEnabled { get; set; } = false;
+    SfTooltip TooltipObj;
+    public Boolean isOpen { get; set; } = false;
+    OnaATargets NewIndicatorModel { get; set; } = new OnaATargets();
+    SfDialog IndicatorDialog;
+    string UserRole { get; set; }
+    bool IndicatorBool = true;
+    bool RegionBool = true;
+    bool DistrictBool = true;
+    bool SubcountyBool = true;
+    bool YearBool = true;
+    bool TargetBool = true;
+
+    private List<object> ToolbarMenu = new List<object>() {
+        new ItemModel() { Text = "Add Target", PrefixIcon = "e-add", Id = "Grid_add"},//Here Grid is SfGrid ID
+        new ItemModel(){ Text = "Edit Target", PrefixIcon= "e-edit", Id="Grid_edit"},
+        new ItemModel(){ Text = "Delete Target", PrefixIcon= "e-delete", Id="Grid_delete"},
+        new ItemModel(){ Text = "Update Target", PrefixIcon= "e-update", Id="Grid_update"},
+        new ItemModel(){ Text = "Cancel Changes", PrefixIcon= "e-cancel", Id="Grid_cancel"}
+    };
+
+    public void OnOpen(Syncfusion.Blazor.DropDowns.PopupEventArgs args)
+    {
+        isOpen = true;
+    }
+
+    public void OnClose(Syncfusion.Blazor.DropDowns.PopupEventArgs args)
+    {
+        TooltipObj.CloseAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (isOpen)
+        {
+            await TooltipObj.RefreshAsync();
+        }
+    }
+    private async Task SaveNewIndicatorbtnClick()
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(NewIndicatorModel.IndicatorDescription))
+            {
+                using (var db = new USAID_ICANContext())
+                {
+                    var exist = db.OnaATargets.FirstOrDefault(o => o.IndicatorDescription.ToLower() == NewIndicatorModel.IndicatorDescription.ToLower());
+                    if (exist != null)
+                    {
+                        await ToastObj.Show(new ToastModel { Title = "Error!", Content = "Ths Indicator already exists", CssClass = "e-toast-danger", Icon = "e-error toast-icons" });
+                    }
+                    else
+                    {
+                        int id = 1;
+                        var last = db.OnaATargets.OrderBy(o => o.IndicatorId).AsNoTracking().ToList().LastOrDefault();
+                        if (last != null)
+                        {
+                            id = (last.IndicatorId + 1);
+                        }
+                        NewIndicatorModel.IndicatorId = id;
+                        db.OnaATargets.Add(NewIndicatorModel);
+                        db.SaveChanges();
+                        NewIndicatorModel = new OnaATargets();
+                        IndData = db.OnaATargets.AsNoTracking().OrderByDescending(o => o.IndicatorId).ToList();
+                        await IndicatorDialog.HideAsync();
+                        TargetData.IndicatorId = id;
+                    }
+                }
+            }
+            else
+            {
+                await ToastObj.Show(new ToastModel { Title = "Error!", Content = "Please enter an indicator name", CssClass = "e-toast-danger", Icon = "e-error toast-icons" });
+            }
+        }
+        catch (Exception ex)
+        {
+            await ToastObj.Show(new ToastModel { Title = "Error!", Content = ex.Message.ToString(), CssClass = "e-toast-danger", Icon = "e-error toast-icons" });
+        }
+    }
+    private async Task AddNewIndicatorbtnClick()
+    {
+        try
+        {
+            NewIndicatorModel = new OnaATargets();
+            await IndicatorDialog.ShowAsync();
+        }
+        catch (Exception ex)
+        {
+            await ToastObj.Show(new ToastModel { Title = "Error!", Content = ex.Message.ToString(), CssClass = "e-toast-danger", Icon = "e-error toast-icons" });
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            if (!userManagement.IsSignedIn())
+            {
+                Navigation.NavigateTo("/", true);
+            }
+
+            using (var db = new USAID_ICANContext())
+            {
+                string Region = string.Empty;
+                Region = userManagement.GetRegionName();
+
+                var user = db.View2022UserManagement.FirstOrDefault(o => o.UserName == userManagement.GetUserName());
+                if (user != null)
+                {
+                    UserRole = user.RoleName;    
+
+                    if(!string.IsNullOrEmpty(Region)){
+                        RegionData = _context.View2022ARegions.Where(o => o.Region.ToLower() == Region.ToLower()).ToList();
+                        DistrictData = _context.ViewADistricts.ToList();
+                        SubcountyData = _context.ViewASubcounties.ToList();
+                        IndData = _context.OnaATargets.OrderByDescending(o => o.IndicatorId).ToList();
+                        YearData = _context.AYear.ToList();
+                    }
+
+                    else{
+                        RegionData = _context.View2022ARegions.ToList();
+                        DistrictData = _context.ViewADistricts.ToList();
+                        SubcountyData = _context.ViewASubcounties.ToList();
+                        IndData = _context.OnaATargets.OrderByDescending(o => o.IndicatorId).ToList();
+                        YearData = _context.AYear.ToList();
+                    }                    
+
+                    if (user.RoleName.ToUpper().Contains("SUPER ADMINISTRATOR") || user.RoleName.ToUpper().Contains("ADMINISTRATOR") || user.RoleName.ToUpper().Contains("REGIONAL M&E OFFICER"))
+                    {
+                        ToolbarMenu = new List<object>(){
+                            new ItemModel() { Text = "Add Target", PrefixIcon = "e-add", Id = "Grid_add" },//Here Grid is SfGrid ID
+                            new ItemModel() { Text = "Edit Target", PrefixIcon = "e-edit", Id = "Grid_edit" },
+                            new ItemModel() { Text = "Delete Target", PrefixIcon = "e-delete", Id = "Grid_delete" },
+                            new ItemModel() { Text = "Update Target", PrefixIcon = "e-update", Id = "Grid_update" },
+                            new ItemModel() { Text = "Cancel Changes", PrefixIcon = "e-cancel", Id = "Grid_cancel" }
+                        };
+
+                        IndicatorBool = true;
+                        RegionBool = true;
+                        YearBool = true;
+                        TargetBool = true;
+                    }
+                    else
+                    {
+                        ToolbarMenu = new List<object>(){
+                            new ItemModel() { Text = "View Target", PrefixIcon = "e-edit", Id = "Grid_edit" },
+                            new ItemModel() { Text = "Cancel Changes", PrefixIcon = "e-cancel", Id = "Grid_cancel" }
+                       };
+
+                        IndicatorBool = false;
+                        RegionBool = false;
+                        YearBool = false;
+                        TargetBool = false;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await ToastObj.Show(new ToastModel { Title = "Error!", Content = ex.Message.ToString(), CssClass = "e-toast-danger", Icon = "e-error toast-icons" });
+        }
+    }
+
+    #region Target Region
+    public class TargetAdapter : DataAdaptor
+    {
+        public IToastService toastService;
+        private UserManagement _userManagement;
+        public TargetAdapter(IToastService ts,UserManagement userManagement)
+        {
+            _userManagement = userManagement;
+            toastService = ts;
+        }
+
+        public override async Task<Object> ReadAsync(DataManagerRequest dataManagerRequest, string key = null)
+        {
+            var data = new List<View2022OnaTargetsUpdated>();
+
+            try
+            {
+                string RegionId = null;
+                string DistrictId = null;
+                string SubcountyId = null;
+                string Year = null;
+                string IndicatorId = null;
+                int? RegionDataId = null;
+
+                if (_userManagement.GetRegionId()!=null)
+                {
+                    RegionDataId = _userManagement.GetRegionId();
+                }
+
+                if (dataManagerRequest.Params != null && dataManagerRequest.Params.Count > 0)
+                {
+                    var val = dataManagerRequest.Params;
+
+                    if (val.FirstOrDefault(o => o.Key == "RegionId").Value != null)
+                    {
+                        RegionId = val.FirstOrDefault(o => o.Key == "RegionId").Value.ToString();
+                    }
+
+                    if (val.FirstOrDefault(o => o.Key == "DistrictId").Value != null)
+                    {
+                        DistrictId = val.FirstOrDefault(o => o.Key == "DistrictId").Value.ToString();
+                    }
+
+                    if (val.FirstOrDefault(o => o.Key == "SubcountyId").Value != null)
+                    {
+                        SubcountyId = val.FirstOrDefault(o => o.Key == "SubcountyId").Value.ToString();
+                    }
+
+                    if (val.FirstOrDefault(o => o.Key == "Year").Value != null)
+                    {
+                        Year = val.FirstOrDefault(o => o.Key == "Year").Value.ToString();
+                    }
+                    if (val.FirstOrDefault(o => o.Key == "IndicatorId").Value != null)
+                    {
+                        IndicatorId = val.FirstOrDefault(o => o.Key == "IndicatorId").Value.ToString();
+                    }
+                }
+
+                using (var dbContext = new USAID_ICANContext())
+                {
+                    string[] _RegionId = new string[] { };
+                    if (!string.IsNullOrEmpty(RegionId))
+                    {
+                        _RegionId = RegionId.Split(',');
+                    }
+                    string[] _districtId = new string[] { };
+                    if (!string.IsNullOrEmpty(DistrictId))
+                    {
+                        _districtId = DistrictId.Split(',');
+                    }
+
+                    string[] _SubcountyId = new string[] { };
+                    if (!string.IsNullOrEmpty(SubcountyId))
+                    {
+                        _SubcountyId = SubcountyId.Split(',');
+                    }
+
+                    string[] _Year = new string[] { };
+                    if (!string.IsNullOrEmpty(Year))
+                    {
+                        _Year = Year.Split(',');
+                    }
+                    string[] _IndicatorId = new string[] { };
+                    if (!string.IsNullOrEmpty(IndicatorId))
+                    {
+                        _IndicatorId = IndicatorId.Split(',');
+                    }
+
+                    if (_userManagement.GetRoleName().Contains("ADMINISTRATOR") || _userManagement.GetRoleName().Contains("SUPER ADMINISTRATOR"))
+                    {
+                        data = await dbContext.View2022OnaTargetsUpdated.Where(o => (_RegionId.Length == 0 || (o.RegionId != null && _RegionId.Any(a => a == o.RegionId.ToString()) == true)) &&
+                        (_districtId.Length == 0 || (o.DistrictId != null && _districtId.Any(a => a == o.DistrictId.ToString()) == true)) && (_SubcountyId.Length == 0 || (o.SubcountyId != null && _SubcountyId.Any(a => a == o.SubcountyId.ToString()) == true)) &&
+                        (_Year.Length == 0 || (o.Year != null && _Year.Any(a => a == o.Year.ToString()) == true)) &&
+                        (_IndicatorId.Length == 0 || (o.IndicatorId != null && _IndicatorId.Any(a => a == o.IndicatorId.ToString()) == true))).OrderByDescending(o => o.TargetId).ToListAsync();
+                    }
+                    else
+                    {
+                        data = await dbContext.View2022OnaTargetsUpdated.Where(o => (o.RegionId==RegionDataId) &&
+                        (_districtId.Length == 0 || (o.DistrictId != null && _districtId.Any(a => a == o.DistrictId.ToString()) == true)) && (_SubcountyId.Length == 0 || (o.SubcountyId != null && _SubcountyId.Any(a => a == o.SubcountyId.ToString()) == true)) &&
+                        (_Year.Length == 0 || (o.Year != null && _Year.Any(a => a == o.Year.ToString()) == true)) &&
+                        (_IndicatorId.Length == 0 || (o.IndicatorId != null && _IndicatorId.Any(a => a == o.IndicatorId.ToString()) == true))).OrderByDescending(o => o.TargetId).ToListAsync();
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                toastService.ShowError(ex.Message.ToString());
+            }
+            IEnumerable GridData = data;
+            int _count = data.Count;
+            if (dataManagerRequest.Search != null && dataManagerRequest.Search.Count > 0)
+            {
+                // Searching
+                GridData = DataOperations.PerformSearching(GridData, dataManagerRequest.Search);
+            }
+            if (dataManagerRequest.Where != null && dataManagerRequest.Where.Count > 0)
+            {
+                // Filtering
+                GridData = DataOperations.PerformFiltering(GridData, dataManagerRequest.Where, dataManagerRequest.Where[0].Operator);
+            }
+            if (dataManagerRequest.Sorted?.Count > 0) // perform Sorting
+            {
+                GridData = DataOperations.PerformSorting(GridData, dataManagerRequest.Sorted);
+            }
+            if (dataManagerRequest.Skip != 0)
+            {
+                GridData = DataOperations.PerformSkip(GridData, dataManagerRequest.Skip); //Paging
+            }
+            if (dataManagerRequest.Take != 0)
+            {
+                GridData = DataOperations.PerformTake(GridData, dataManagerRequest.Take);
+            }
+            IDictionary<string, object> aggregates = new Dictionary<string, object>();
+            if (dataManagerRequest.Aggregates != null) // Aggregation
+            {
+                aggregates = DataUtil.PerformAggregation(GridData, dataManagerRequest.Aggregates);
+            }
+            if (dataManagerRequest.Group != null && dataManagerRequest.Group.Any()) //Grouping
+            {
+                foreach (var group in dataManagerRequest.Group)
+                {
+                    GridData = DataUtil.Group<View2022OnaTargetsUpdated>(GridData, group, dataManagerRequest.Aggregates, 0, dataManagerRequest.GroupByFormatter);
+                }
+            }
+            return dataManagerRequest.RequiresCounts ? new DataResult() { Result = GridData, Count = _count, Aggregates = aggregates } : (object)GridData;
+        }
+
+        public override async Task<Object> InsertAsync(DataManager dataManager, object value, string key)
+        {
+            try
+            {
+                using (var dbContext = new USAID_ICANContext())
+                {
+                    var val = (value as View2022OnaTargetsUpdated);
+                    OnaTargets targ = new OnaTargets();
+                    var exists = dbContext.View2022OnaTargetsUpdated.FirstOrDefault(o => o.TargetId == val.TargetId);
+                    if (exists == null)
+                    {
+                        int id = 1;
+                        var last = dbContext.View2022OnaTargetsUpdated.OrderBy(o => o.TargetId).LastOrDefault();
+                        if (last != null)
+                        {
+                            id = (last.TargetId + 1);
+                        }
+
+                        targ.TargetId = id;
+                        targ.IndicatorId = val.IndicatorId;
+                        targ.Region = val.Region;
+                        targ.District = val.District;
+                        targ.Subcounty = val.Subcounty;
+                        targ.Year = val.Year;
+                        targ.Target = val.Target;
+                        targ.AddedBy = _userManagement.GetStaffName();
+                        targ.AddedAt = DateTime.Now;
+
+                        dbContext.OnaTargets.Add(targ);
+                    }
+
+                    await dbContext.SaveChangesAsync();
+                    string result = "Record Saved Successfully";
+                    toastService.ShowInfo(result);
+
+                }
+            }
+            catch (Exception ex)
+            {
+                toastService.ShowError(ex.Message.ToString());
+            }
+            return value;
+        }
+        public override async Task<object> RemoveAsync(DataManager dataManager, object value, string keyField, string key)
+        {
+            try
+            {
+                int data = (int)value;
+                using (var dbContext = new USAID_ICANContext())
+                {
+                    var exists = dbContext.OnaTargets.FirstOrDefault(o => o.TargetId == data);
+                    if (exists != null)
+                    {
+                        dbContext.OnaTargets.Remove(exists);
+                    }
+                    await dbContext.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                toastService.ShowError(ex.Message.ToString());
+            }
+
+
+            return value;
+        }
+        public override async Task<object> UpdateAsync(DataManager dataManager, object value, string keyField, string key)
+        {
+            try
+            {
+                using (var dbContext = new USAID_ICANContext())
+                {
+                    var val = (value as View2022OnaTargetsUpdated);
+                    OnaTargets targ = new OnaTargets();
+                    var exists = dbContext.OnaTargets.FirstOrDefault(o => o.TargetId == val.TargetId);
+                    if (exists != null)
+                    {
+                        targ.IndicatorId = val.IndicatorId;
+                        targ.Region = val.Region;
+                        targ.District = val.District;
+                        targ.Subcounty = val.Subcounty;
+                        targ.Year = val.Year;
+                        targ.Target = val.Target;
+                        targ.UpdatedBy = _userManagement.GetStaffName();
+                        targ.LastUpdatedAt = DateTime.Now;
+
+                        dbContext.Entry(exists).CurrentValues.SetValues(val);
+                        dbContext.Entry(exists).State = EntityState.Modified;
+                    }
+
+                    await dbContext.SaveChangesAsync();
+                    string result = "Record Updated Successfully";
+                    toastService.ShowInfo(result);
+                }
+            }
+            catch (Exception ex)
+            {
+                toastService.ShowError(ex.Message.ToString());
+            }
+
+            return value;
+        }
+    }
+
+    public void TargetActionComplete(Syncfusion.Blazor.Grids.ActionEventArgs<View2022OnaTargetsUpdated> args)
+    {
+        if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Add) || args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.BeginEdit))
+        {
+            TargetGrid.PreventRender(false);
+        }
+    }
+
+    public void OnTargetActionBegin(ActionEventArgs<View2022OnaTargetsUpdated> args)
+    {
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.BeginEdit)
+        {
+            using (var db = new USAID_ICANContext())
+            {
+                var user = db.View2022UserManagement.FirstOrDefault(o => o.UserName == userManagement.GetUserName());
+                if (user != null)
+                {
+                    UserRole = user.RoleName;
+                    
+                    if (user.RoleName.ToUpper().Contains("SUPER ADMINISTRATOR") || user.RoleName.ToUpper().Contains("ADMINISTRATOR") || user.RoleName.ToUpper().Contains("REGIONAL M&E OFFICER"))
+                    {
+                        this.DistrictDD = true;
+                        this.SubcountyDD = true;
+                    }
+                    else{
+                        this.DistrictDD = false;
+                        this.SubcountyDD = false;
+                    }
+                }
+            }
+                //this.DistrictDD = true;
+                this.DistricttQuery = new Query().Where(new WhereFilter() { Field = "Region", Operator = "equal", value = args.RowData.Region, IgnoreCase = false, IgnoreAccent = false });
+                //this.SubcountyDD = true;
+                this.SubcounttyQuery = new Query().Where(new WhereFilter() { Field = "District", Operator = "equal", value = args.RowData.District, IgnoreCase = false, IgnoreAccent = false });
+
+            }
+            if (args.RequestType == Syncfusion.Blazor.Grids.Action.Add)
+            {
+                //string Region = string.Empty;
+                //Region = userManagement.GetRegionName();
+                //args.RowData.Region = Region;
+                //StateHasChanged();
+            }
+            if (args.RequestType == Syncfusion.Blazor.Grids.Action.Cancel)
+            {
+
+            }
+            if (args.RequestType == Syncfusion.Blazor.Grids.Action.Save)
+            {
+                if (args.Data.IndicatorId == null)
+                {
+                    ToastObj.Show(new ToastModel { Title = "Warning!", Content = "Please choose an Indicator.", CssClass = "e-toast-warning", Icon = "e-warning toast-icons" });
+                    args.Cancel = true;
+                }
+                else if (string.IsNullOrEmpty(args.Data.Region))
+                {
+                    ToastObj.Show(new ToastModel { Title = "Warning!", Content = "Please choose a region before saving this record.", CssClass = "e-toast-warning", Icon = "e-warning toast-icons" });
+                    args.Cancel = true;
+                }
+
+                else if (string.IsNullOrEmpty(args.Data.District))
+                {
+                    ToastObj.Show(new ToastModel { Title = "Warning!", Content = "Please choose a district before saving this record.", CssClass = "e-toast-warning", Icon = "e-warning toast-icons" });
+                    args.Cancel = true;
+                }
+
+                else if (args.Data.Year == null)
+                {
+                    ToastObj.Show(new ToastModel { Title = "Warning!", Content = "Please fill in the year before saving this record.", CssClass = "e-toast-warning", Icon = "e-warning toast-icons" });
+                    args.Cancel = true;
+                }
+                else if (args.Data.Target == null)
+                {
+                    ToastObj.Show(new ToastModel { Title = "Warning!", Content = "Please enter the target before saving this record.", CssClass = "e-toast-warning", Icon = "e-warning toast-icons" });
+                    args.Cancel = true;
+                }
+
+                else
+                {
+                    using (var db = new USAID_ICANContext())
+                    {
+                        //var exists = db.View2022OnaTargetsUpdated.FirstOrDefault(o => (o.IndicatorId == args.Data.IndicatorId) && (o.Region.ToLower() == args.Data.Region.ToLower()) && (o.District.ToLower() == args.Data.District.ToLower()) && (o.Year == args.Data.Year));
+                        //var exists = db.View2022OnaTargetsUpdated.FirstOrDefault(o => (o.IndicatorId == args.Data.IndicatorId) && (o.Region.ToLower() == args.Data.Region.ToLower()) && (o.District.ToLower() == args.Data.District.ToLower()) && (o.Subcounty.ToLower() == args.Data.Subcounty.ToLower()) && (o.Year == args.Data.Year));
+                        //if (exists != null && exists.TargetId != args.Data.TargetId)
+                        //{
+                        //    ToastObj.Show(new ToastModel { Title = "Error!", Content = "This indicator already exists in the database and will not be saved.", CssClass = "e-toast-danger", Icon = "e-error toast-icons" });
+                        //    args.Cancel = true;
+                        //}
+
+                        if (!string.IsNullOrEmpty(args.Data.Subcounty)){
+                        var exists = db.View2022OnaTargetsUpdated.FirstOrDefault(o => (o.IndicatorId == args.Data.IndicatorId) && (o.Region.ToLower() == args.Data.Region.ToLower()) && (o.District.ToLower() == args.Data.District.ToLower()) && (o.Subcounty == args.Data.Subcounty) && (o.Year == args.Data.Year));
+                        if (exists != null && exists.TargetId != args.Data.TargetId)
+                        {
+                            ToastObj.Show(new ToastModel { Title = "Error!", Content = "This indicator already exists in the database and will not be saved.", CssClass = "e-toast-danger", Icon = "e-error toast-icons" });
+                            args.Cancel = true;
+                        }
+                        }
+                        else if (string.IsNullOrEmpty(args.Data.Subcounty)){
+                        var exists = db.View2022OnaTargetsUpdated.FirstOrDefault(o => (o.IndicatorId == args.Data.IndicatorId) && (o.Region.ToLower() == args.Data.Region.ToLower()) && (o.District.ToLower() == args.Data.District.ToLower()) && (o.Year == args.Data.Year) && string.IsNullOrEmpty(o.Subcounty)==true);
+                        if (exists != null && exists.TargetId != args.Data.TargetId)
+                        {
+                            ToastObj.Show(new ToastModel { Title = "Error!", Content = "This indicator already exists in the database and will not be saved.", CssClass = "e-toast-danger", Icon = "e-error toast-icons" });
+                            args.Cancel = true;
+                        }
+                        }
+                    }
+                }
+            }
+        }
+
+        public string GetTargetHeader(View2022OnaTargetsUpdated Value)
+        {
+            if (Value.TargetId == 0)
+            {
+                ButtonText = "Insert";
+                return "Add a new Target";
+            }
+            else
+            {
+                ButtonText = "Save Changes";
+                return "Edit Details for Indicator: " + Value.IndicatorDescription + " || " + "Region: " + Value.RegionDescription + " || " + "District: " + Value.DistrictDescription + " || " + "Year: " + Value.Year;
+            }
+        }
+
+        #endregion Target Region
+
+        public void ChangeDistrict(Syncfusion.Blazor.DropDowns.ChangeEventArgs<string, View2022ARegions> args)
+        {
+            this.DistrictDD = true;
+            this.DistricttQuery = new Query().Where(new WhereFilter() { Field = "Region", Operator = "equal", value = args.Value, IgnoreCase = false, IgnoreAccent = false });
+        }
+        public void ChangeSubcounty(Syncfusion.Blazor.DropDowns.ChangeEventArgs<string,ViewADistricts> args)
+        {
+            this.SubcountyDD = true;
+            this.SubcounttyQuery = new Query().Where(new WhereFilter() { Field = "District", Operator = "equal", value = args.Value, IgnoreCase = false, IgnoreAccent = false });
+        }
+
+        private void SearchRecords()
+        {
+            try
+            {
+                MainQuery = new Query();
+                if (InputModel.RegionId != null)
+                {
+                    MainQuery.AddParams("RegionId", string.Join(",", InputModel.RegionId));
+                }
+                if (InputModel.DistrictId != null)
+                {
+                    MainQuery.AddParams("DistrictId", string.Join(",", InputModel.DistrictId));
+                }
+                if (InputModel.SubcountyId != null)
+                {
+                    MainQuery.AddParams("SubcountyId", string.Join(",", InputModel.SubcountyId));
+                }
+                if (InputModel.Year != null)
+                {
+                    MainQuery.AddParams("Year", string.Join(",", InputModel.Year));
+                }
+                if (InputModel.IndicatorId != null)
+                {
+                    MainQuery.AddParams("IndicatorId", string.Join(",", InputModel.IndicatorId));
+                }
+            }
+
+            catch (Exception ex)
+            {
+                ToastObj.Show(new ToastModel { Title = "Error!", Content = ex.Message.ToString(), CssClass = "e-toast-danger", Icon = "e-error toast-icons" });
+            }
+        }
+
+        private void ClearSearchBtnClick()
+        {
+            InputModel = new();
+            MainQuery = new Query();
+        }
+        public void OnRegionChange(Syncfusion.Blazor.DropDowns.MultiSelectChangeEventArgs<int?[]> args)
+        {
+            if (args.Value != null)
+            {
+                using (var db = new USAID_ICANContext())
+                {
+                    DistrictData = db.ViewADistricts.Where(o => args.Value.Any(a => a == o.RegionId) == true).ToList();
+                    DistrictEnabled = true;
+                }
+            }
+        }
+        public void OnDistrictChange(Syncfusion.Blazor.DropDowns.MultiSelectChangeEventArgs<int?[]> args)
+        {
+            if (args.Value != null)
+            {
+                using (var db = new USAID_ICANContext())
+                {
+                    SubcountyData = db.ViewASubcounties.Where(o => args.Value.Any(a => a == o.DistrictId) == true).ToList();
+                    SubcountyEnabled = true;
+                }
+            }
+        }
+
+    }

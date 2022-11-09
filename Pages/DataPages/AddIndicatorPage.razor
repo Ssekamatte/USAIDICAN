@@ -1,0 +1,308 @@
+﻿@page "/AddIndicators"
+@using USAIDICANBLAZOR.Models;
+@using System.Collections;
+@using Microsoft.EntityFrameworkCore;
+@using Syncfusion.Blazor.Data;
+@using System.IO;
+@using Syncfusion.DocIO.DLS;
+@using Syncfusion.DocIORenderer;
+@using Syncfusion.Pdf;
+@inject USAID_ICANContext _context;
+@inject NavigationManager Navigation;
+@using USAIDICANBLAZOR.Data;
+@inject UserManagement userManagement;
+@using Microsoft.AspNetCore.Hosting;
+@inject IWebHostEnvironment hostingEnv;
+
+
+    <ol class="breadcrumb" style="margin-top:5px;">
+        <li class="breadcrumb-item active" style="width: 100%; background-color: #a1b741; color: ghostwhite; font-family: Cambria; padding: 5px; font: bolder;"> <strong>Add/Update Indicators</strong></li>
+    </ol>
+
+    <div class="row">
+        <div class="col-lg-12 control-section">
+            <SfToast @ref="ToastObj" ID="toast_type">
+                <ToastPosition X="@ToastPosition"></ToastPosition>
+            </SfToast>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group col-md-12">
+            <SfGrid ID="Grid" @ref="IndicatorGrid" TValue="OnaATargets"
+                    Toolbar="@(new List<string>() {"Add","Edit","Update","Cancel" })" AllowGrouping="true" ShowColumnChooser="true" AllowTextWrap="true"
+                    AllowPaging="true" AllowFiltering="true" GridLines="GridLine.Both" AllowSelection="true">
+              
+                <SfDataManager AdaptorInstance="@typeof(AdminIndicatorAdapter)" Adaptor="Adaptors.CustomAdaptor"></SfDataManager>
+                <GridSelectionSettings Mode="Syncfusion.Blazor.Grids.SelectionMode.Row" Type="Syncfusion.Blazor.Grids.SelectionType.Single"></GridSelectionSettings>
+                <GridSearchSettings IgnoreCase="true"></GridSearchSettings>
+                <GridEvents OnActionBegin="OnIndicatorActionBegin" OnActionComplete="IndicatorActionComplete" TValue="OnaATargets"></GridEvents>
+                <GridEditSettings AllowAdding="true" AllowDeleting="false" AllowEditing="true" Mode="@EditMode.Dialog">
+                    <HeaderTemplate>
+                        @{
+                            var text = GetIndicatorHeader((context as OnaATargets));
+                                <div class="headerbandimg" /><span>@text</span>
+                        }
+                    </HeaderTemplate>
+                    <Template Context="IndicatorContext">
+                        @{
+                            IndicatorData = (IndicatorContext as OnaATargets);
+                                <div style="padding:15px;">
+                                    <div class="form-row">                                        
+                                        <div class="form-group col-md-12" hidden>
+                                            <SfNumericTextBox ID="IndicatorId" @bind-Value="@(IndicatorData.IndicatorId)" Enabled="false" Placeholder="Indicator Id" Format="N0" FloatLabelType="FloatLabelType.Always"></SfNumericTextBox>
+                                        </div>
+
+                                        <div class="form-group col-md-12">
+                                            <SfTextBox ID="IndicatorDescription" @bind-Value="@(IndicatorData.IndicatorDescription)" Placeholder="Indicator" Format="N0" FloatLabelType="FloatLabelType.Always"></SfTextBox>
+                                        </div>
+                                    </div>
+                                </div>
+                        }
+                    </Template>
+                </GridEditSettings>
+                <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+                <GridPageSettings PageSize="20"></GridPageSettings>
+                <GridColumns>
+                    <GridColumn Type="ColumnType.CheckBox" Width="50"></GridColumn>
+                    <GridColumn Field=@nameof(OnaATargets.IndicatorId) HeaderText="Indicator Id" TextAlign="TextAlign.Left" IsPrimaryKey="true" IsIdentity="true" Visible="false" Width="100"></GridColumn>
+                    <GridColumn Field=@nameof(OnaATargets.IndicatorDescription) HeaderText="Indicator"></GridColumn>
+                </GridColumns>
+            </SfGrid>
+        </div>
+    </div>
+
+@code {
+    #region Toasters
+    public static string ToastContent { get; set; }
+    SfToast ToastObj;
+    SfToast DeleteToastObj;
+    private string ToastPosition = "Right";
+    private int AlarmTimeout { get; set; } = 120000;
+    private List<ToastModel> Toast = new List<ToastModel>
+    {
+        new ToastModel{ Title = "Warning!", Content=ToastContent, CssClass="e-toast-warning", Icon="e-warning toast-icons" },
+        new ToastModel{ Title = "Success!", Content=ToastContent, CssClass="e-toast-success", Icon="e-success toast-icons" },
+        new ToastModel{ Title = "Error!", Content=ToastContent, CssClass="e-toast-danger", Icon="e-error toast-icons" },
+        new ToastModel{ Title = "Information!", Content=ToastContent, CssClass="e-toast-info", Icon="e-info toast-icons" }
+    };
+    #endregion Toasters
+
+    private SfGrid<OnaATargets> IndicatorGrid;
+    private static OnaATargets IndicatorData { get; set; }
+
+    #region Indicator Region
+    public class AdminIndicatorAdapter : DataAdaptor
+    {
+        public IToastService toastService;
+        private UserManagement _userManagement;
+        public AdminIndicatorAdapter(IToastService ts,UserManagement userManagement)
+        {
+            _userManagement = userManagement;
+            toastService = ts;
+        }
+
+        public override async Task<Object> ReadAsync(DataManagerRequest dataManagerRequest, string key = null)
+        {
+            var data = new List<OnaATargets>();
+            try
+            {
+                using (var dbContext = new USAID_ICANContext())
+                {
+                    data = await dbContext.OnaATargets.OrderByDescending(o => o.IndicatorId).ToListAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                toastService.ShowError(ex.ToString());
+            }
+
+            IEnumerable GridData = data;
+            int _count = data.Count;
+            if (dataManagerRequest.Search != null && dataManagerRequest.Search.Count > 0)
+            {
+                // Searching
+                GridData = DataOperations.PerformSearching(GridData, dataManagerRequest.Search);
+            }
+            if (dataManagerRequest.Where != null && dataManagerRequest.Where.Count > 0)
+            {
+                // Filtering
+                GridData = DataOperations.PerformFiltering(GridData, dataManagerRequest.Where, dataManagerRequest.Where[0].Operator);
+            }
+            if (dataManagerRequest.Sorted?.Count > 0) // perform Sorting
+            {
+                GridData = DataOperations.PerformSorting(GridData, dataManagerRequest.Sorted);
+            }
+            if (dataManagerRequest.Skip != 0)
+            {
+                GridData = DataOperations.PerformSkip(GridData, dataManagerRequest.Skip); //Paging
+            }
+            if (dataManagerRequest.Take != 0)
+            {
+                GridData = DataOperations.PerformTake(GridData, dataManagerRequest.Take);
+            }
+            IDictionary<string, object> aggregates = new Dictionary<string, object>();
+            if (dataManagerRequest.Aggregates != null) // Aggregation
+            {
+                aggregates = DataUtil.PerformAggregation(GridData, dataManagerRequest.Aggregates);
+            }
+            if (dataManagerRequest.Group != null && dataManagerRequest.Group.Any()) //Grouping
+            {
+                foreach (var group in dataManagerRequest.Group)
+                {
+                    GridData = DataUtil.Group<OnaATargets>(GridData, group, dataManagerRequest.Aggregates, 0, dataManagerRequest.GroupByFormatter);
+                }
+            }
+            return dataManagerRequest.RequiresCounts ? new DataResult() { Result = GridData, Count = _count, Aggregates = aggregates } : (object)GridData;
+        }
+
+
+        public override async Task<Object> InsertAsync(DataManager dataManager, object value, string key)
+        {
+            try
+            {
+                using (var dbContext = new USAID_ICANContext())
+                {
+                    var val = (value as OnaATargets);
+                    OnaATargets targ = new OnaATargets();
+                    var exists = dbContext.OnaATargets.FirstOrDefault(o => o.IndicatorId == val.IndicatorId);
+                    if (exists == null)
+                    {
+                        int id = 1;
+                        var last = dbContext.OnaATargets.OrderBy(o => o.IndicatorId).LastOrDefault();
+                        if (last != null)
+                        {
+                            id = (last.IndicatorId + 1);
+                        }
+
+                        targ.IndicatorId = id;
+                        targ.IndicatorDescription = val.IndicatorDescription;  
+                        dbContext.OnaATargets.Add(targ);
+                    }
+
+                    await dbContext.SaveChangesAsync();
+                    string result = "Record Saved Successfully";
+                    toastService.ShowInfo(result);
+
+                }
+            }
+            catch (Exception ex)
+            {
+                toastService.ShowError(ex.Message.ToString());
+            }
+            return value;
+        }
+        public override async Task<object> RemoveAsync(DataManager dataManager, object value, string keyField, string key)
+        {
+            try
+            {
+                int data = (int)value;
+                using (var dbContext = new USAID_ICANContext())
+                {
+                    var exists = dbContext.OnaATargets.FirstOrDefault(o => o.IndicatorId == data);
+                    if (exists != null)
+                    {
+                        dbContext.OnaATargets.Remove(exists);
+                    }
+                    await dbContext.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                toastService.ShowError(ex.Message.ToString());
+            }
+
+
+            return value;
+        }
+        public override async Task<object> UpdateAsync(DataManager dataManager, object value, string keyField, string key)
+        {
+            try
+            {
+                using (var dbContext = new USAID_ICANContext())
+                {
+                    var val = (value as OnaATargets);
+                    OnaATargets targ = new OnaATargets();
+                    var exists = dbContext.OnaATargets.FirstOrDefault(o => o.IndicatorId == val.IndicatorId);
+                    if (exists != null)
+                    {
+                        targ.IndicatorDescription = val.IndicatorDescription;
+
+                        dbContext.Entry(exists).CurrentValues.SetValues(val);
+                        dbContext.Entry(exists).State = EntityState.Modified;
+                    }
+
+                    await dbContext.SaveChangesAsync();
+                    string result = "Record Updated Successfully";
+                    toastService.ShowInfo(result);
+                }
+            }
+            catch (Exception ex)
+            {
+                toastService.ShowError(ex.Message.ToString());
+            }
+
+            return value;
+        }
+    }
+
+    public void IndicatorActionComplete(Syncfusion.Blazor.Grids.ActionEventArgs<OnaATargets> args)
+    {
+        if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Add) || args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.BeginEdit))
+        {
+            IndicatorGrid.PreventRender(false);
+        }
+    }
+
+    public void OnIndicatorActionBegin(ActionEventArgs<OnaATargets> args)
+    {
+            if (args.RequestType == Syncfusion.Blazor.Grids.Action.BeginEdit)
+            {
+            
+            }
+            if (args.RequestType == Syncfusion.Blazor.Grids.Action.Add)
+            {
+              
+            }
+            if (args.RequestType == Syncfusion.Blazor.Grids.Action.Cancel)
+            {
+
+            }
+            if (args.RequestType == Syncfusion.Blazor.Grids.Action.Save)
+            {
+                if (string.IsNullOrEmpty(args.Data.IndicatorDescription))
+                {
+                    ToastObj.Show(new ToastModel { Title = "Warning!", Content = "Please enter an Indicator.", CssClass = "e-toast-warning", Icon = "e-warning toast-icons" });
+                    args.Cancel = true;
+                }
+                
+                else
+                {
+                    using (var db = new USAID_ICANContext())
+                    {
+                        var exists = db.OnaATargets.FirstOrDefault(o => (o.IndicatorDescription == args.Data.IndicatorDescription));
+                        if (exists != null)
+                        {
+                            ToastObj.Show(new ToastModel { Title = "Error!", Content = "This indicator already exists in the database and will not be saved.", CssClass = "e-toast-danger", Icon = "e-error toast-icons" });
+                            args.Cancel = true;
+                        }
+
+                    }
+                }
+            }
+        }
+
+        public string GetIndicatorHeader(OnaATargets Value)
+        {
+            if (Value.IndicatorId == 0)
+            {
+                return "Add a new Indicator";
+            }
+            else
+            {
+                return "Edit Details for Indicator: " + Value.IndicatorDescription;
+            }
+        }
+
+        #endregion Indicator Region
+}

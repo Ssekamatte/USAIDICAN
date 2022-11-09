@@ -1,0 +1,494 @@
+﻿@page "/PerformanceIndicatorsReport"
+@using System.Collections.ObjectModel
+@using USAIDICANBLAZOR.Models;
+@using USAIDICANBLAZOR.Data;
+@using System.IO;
+@using Microsoft.EntityFrameworkCore;
+@using System.Collections;
+@inject UserManagement userManagement;
+@inject NavigationManager Navigation;
+@using Syncfusion.XlsIO;
+@using Syncfusion.XlsIO.Implementation;
+@using Syncfusion.XlsIORenderer;
+@inject Microsoft.JSInterop.IJSRuntime JS
+@using Microsoft.AspNetCore.Hosting;
+@inject IWebHostEnvironment hostEnvironment;
+
+<style>
+    .e-spinner-pane .e-spinner-inner .e-spin-bootstrap4 {
+        stroke: green;
+    }
+</style>
+
+
+<ol class="breadcrumb" style="margin-top:5px;">
+    <li class="breadcrumb-item active" style="width: 100%; background-color: #a1b741; color: ghostwhite; font-family: Cambria; padding: 5px; font: bolder;"> <strong>PERFORMANCE INDICATORS REPORT</strong> | REPORT</li>
+</ol>
+<div class="row">
+    <div class="col-lg-12 control-section">
+        <SfToast @ref="ToastObj" ID="toast_type">
+            <ToastPosition X="@ToastPosition"></ToastPosition>
+        </SfToast>
+    </div>
+</div>
+
+<EditForm Model="@InputModel" OnValidSubmit="@OnSearchSubmit">
+    <DataAnnotationsValidator />
+    <div class="row" style="margin-bottom:10px;">
+        <div class="col col-md-6">
+            <SfMultiSelect @bind-Value="@InputModel.RegionId" TValue="int?[]" TItem="View2022ARegions" AllowFiltering="true" Placeholder="Region" Mode="@VisualMode.CheckBox" DataSource="@RegionData" ShowSelectAll="true" EnableSelectionOrder="true" ShowDropDownIcon="true" FilterBarPlaceholder="Search Region" FloatLabelType="FloatLabelType.Always" PopupHeight="350px">
+                <MultiSelectFieldSettings Value="@nameof(View2022ARegions.RegionId)" Text="@nameof(View2022ARegions.Region)"></MultiSelectFieldSettings>
+                <MultiSelectEvents TValue="int?[]" TItem="View2022ARegions" ValueChange="OnRegionChange"></MultiSelectEvents>
+            </SfMultiSelect>
+        </div>
+        <div class="col col-md-6">
+            <SfMultiSelect @bind-Value="@InputModel.DistrictId" TValue="int?[]" TItem="ViewADistricts" AllowFiltering="true" Enabled="@isEnabled" Placeholder="District" Mode="@VisualMode.CheckBox" DataSource="@DistrictData" ShowSelectAll="true" EnableSelectionOrder="true" ShowDropDownIcon="true" FilterBarPlaceholder="Search District" FloatLabelType="FloatLabelType.Always" PopupHeight="350px">
+                <MultiSelectFieldSettings Value="@nameof(ViewADistricts.DistrictId)" Text="@nameof(ViewADistricts.District)"></MultiSelectFieldSettings>
+            </SfMultiSelect>
+        </div>
+        <div class="col col-md-6">
+            <SfMultiSelect @bind-Value="@InputModel.Year" TValue="int?[]" TItem="AYear" AllowFiltering="true" Placeholder="Year" Mode="@VisualMode.CheckBox" DataSource="@FinancialYearData" ShowSelectAll="true" EnableSelectionOrder="true" ShowDropDownIcon="true" FilterBarPlaceholder="Search Year" FloatLabelType="FloatLabelType.Always" PopupHeight="350px">
+            <MultiSelectFieldSettings Value="@nameof(AYear.YearId)" Text="@nameof(AYear.YearName)"></MultiSelectFieldSettings>
+            <MultiSelectEvents TValue="int?[]" TItem="AYear" ValueChange="OnIndicatorChange"></MultiSelectEvents>
+        </SfMultiSelect>
+        </div>
+        @*<div class="col col-md-6">
+            <SfMultiSelect @bind-Value="@InputModel.QuarterId" TValue="int?[]" TItem="OnaAQuarter" AllowFiltering="true" Placeholder="Quarter" Mode="@VisualMode.CheckBox" DataSource="@QuarterData" ShowSelectAll="true" EnableSelectionOrder="true" ShowDropDownIcon="true" FilterBarPlaceholder="Search Quarter" FloatLabelType="FloatLabelType.Always" PopupHeight="350px">
+                <MultiSelectFieldSettings Value="@nameof(OnaAQuarter.QuarterId)" Text="@nameof(OnaAQuarter.QuarterDescription)"></MultiSelectFieldSettings>
+            </SfMultiSelect>
+        </div>*@
+
+        <div class="col col-md-6">
+            @*Enabled="@isindicatorEnabled"*@
+            <SfMultiSelect @bind-Value="@InputModel.IndicatorId" TValue="int?[]" TItem="OnaATargets" AllowFiltering="true" FilterType="Syncfusion.Blazor.DropDowns.FilterType.Contains" Placeholder="Indicator" Mode="@VisualMode.CheckBox" DataSource="@IndData" ShowSelectAll="true" EnableSelectionOrder="true" ShowDropDownIcon="true" FilterBarPlaceholder="Search Indicator" FloatLabelType="FloatLabelType.Always" PopupHeight="350px">
+                <MultiSelectFieldSettings Value="@nameof(OnaATargets.IndicatorId)" Text="@nameof(OnaATargets.IndicatorDescription)"></MultiSelectFieldSettings>
+            </SfMultiSelect>
+        </div>
+
+        @if (Downloadreport == false)
+        {
+            <div class="col col-md-3">
+                <BSButton Color="Color.Primary" ButtonType="BlazorStrap.ButtonType.Submit">Download Report</BSButton>
+                <BSButton Color="Color.Secondary" ButtonType="BlazorStrap.ButtonType.Button" @onclick="ClearSearchBtnClick">Clear Search</BSButton>
+            </div>
+
+        }
+
+        <div class="form-group col-md-12">
+            <SfSpinner @ref="DownloadingSpinner" Label="Downloading Report Please Wait....." Size="50"></SfSpinner>
+        </div>
+
+        @if (!string.IsNullOrEmpty(InputModel.Response))
+        {
+            <div class="col col-md-12" style="margin-top:10px;">
+                <div class="alert alert-success">@InputModel.Response</div>
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(filename))
+        {
+            <div class="form-group col-md-12">
+                <embed src="/SpreadSheetPage?filename=@filename" width="102.5%" style="height:94vh; border:0; border-width:0; margin-top: -25px; margin-right: -20px; margin-left: -20px; margin-bottom: -15px; " frameborder="0" />
+            </div>
+        }
+    </div>
+    <ValidationSummary />
+</EditForm>
+
+
+@code {
+    #region Toasters
+    public static string ToastContent { get; set; }
+    SfToast ToastObj;
+    SfToast DeleteToastObj;
+    private string ToastPosition = "Right";
+    private int AlarmTimeout { get; set; } = 120000;
+    private List<ToastModel> Toast = new List<ToastModel>
+{
+        new ToastModel{ Title = "Warning!", Content=ToastContent, CssClass="e-toast-warning", Icon="e-warning toast-icons" },
+        new ToastModel{ Title = "Success!", Content=ToastContent, CssClass="e-toast-success", Icon="e-success toast-icons" },
+        new ToastModel{ Title = "Error!", Content=ToastContent, CssClass="e-toast-danger", Icon="e-error toast-icons" },
+        new ToastModel{ Title = "Information!", Content=ToastContent, CssClass="e-toast-info", Icon="e-info toast-icons" }
+    };
+    #endregion Toasters
+
+    private SearchPanel InputModel = new SearchPanel();
+    private List<View2022ARegions> RegionData { get; set; }
+    private List<ViewADistricts> DistrictData { get; set; }
+    private List<AYear> FinancialYearData { get; set; }
+    private List<OnaAQuarter> QuarterData { get; set; }
+
+    //private List<ViewAYear> YearData { get; set; }
+    private List<spPerformanceIndicatorsReportResult> IndicatorsResultsData { get; set; }
+    private List<View2022OnaTargetsUpdated> IndicatorsData { get; set; }
+    private List<View2022indicatorFilter> IndicatorFilterData { get; set; }
+    private List<OnaATargets> IndData { get; set; }
+
+    SfSpinner DownloadingSpinner;
+    bool Downloadreport { get; set; } = false;
+    string filename { get; set; } = null;
+    bool isEnabled { get; set; } = false;
+    bool isindicatorEnabled { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await base.OnInitializedAsync();
+            if (!userManagement.IsSignedIn())
+            {
+                Navigation.NavigateTo("/", true);
+            }
+            else
+            {
+                InputModel = new SearchPanel();
+                using (var db = new SPToCoreContext())
+                {
+                    RegionData = db.View2022ARegions.OrderBy(o => o.Region).ToList();
+                    QuarterData = db.OnaAQuarter.OrderBy(o => o.QuarterId).ToList();
+                    DistrictData = db.ViewADistricts.OrderBy(o => o.District).ToList();
+                    IndicatorsData = db.View2022OnaTargetsUpdated.OrderBy(o => o.IndicatorId).ToList();
+                    IndicatorFilterData = db.View2022indicatorFilter.OrderBy(o => o.IndicatorDescription).ToList();
+                    FinancialYearData = db.AYear.OrderBy(o => o.YearId).ToList();
+                    IndData = db.OnaATargets.OrderBy(o => o.IndicatorDescription).ToList();
+
+
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await ToastObj.Show(new ToastModel { Title = "Error!", Content = ex.Message.ToString(), CssClass = "e-toast-danger", Icon = "e-error toast-icons" });
+        }
+    }
+    private void ClearSearchBtnClick()
+    {
+        InputModel = new SearchPanel();
+    }
+
+    private async Task OnSearchSubmit()
+    {
+        filename = null;
+        Downloadreport = true;
+        await DownloadingSpinner.ShowAsync();
+
+        try
+        {
+            using (var db = new SPToCoreContext())
+            {
+                string RegionId = null;
+                string DistrictId = null;
+                string FinancialYearId = null;
+                string IndicatorId = null;
+                string QuarterId = null;
+
+                if (InputModel.RegionId != null && InputModel.RegionId.Length > 0)
+                {
+                    RegionId = string.Join(",", InputModel.RegionId);
+                }
+
+                if (InputModel.DistrictId != null && InputModel.DistrictId.Length > 0)
+                {
+                    DistrictId = string.Join(",", InputModel.DistrictId);
+                }
+
+                if (InputModel.IndicatorId != null && InputModel.IndicatorId.Length > 0)
+                {
+                    IndicatorId = string.Join(",", InputModel.IndicatorId);
+                }
+
+                if (InputModel.Year != null && InputModel.Year.Length > 0)
+                {
+                    FinancialYearId = string.Join(",", InputModel.Year);
+                }
+
+                if (InputModel.QuarterId != null && InputModel.QuarterId.Length > 0)
+                {
+                    QuarterId = string.Join(",", InputModel.QuarterId);
+                }
+
+                var data = await db.spPerformanceIndicatorsReportAsync(RegionId,DistrictId, FinancialYearId, IndicatorId,QuarterId);
+                if (data.Count > 0)
+                {
+                    using (ExcelEngine excelEngine = new ExcelEngine())
+                    {
+                        IApplication application = excelEngine.Excel;
+                        application.DefaultVersion = ExcelVersion.Excel2013;
+                        IWorkbook workbook = application.Workbooks.Create(1);
+                        IWorksheet worksheet = workbook.Worksheets[0];
+                        worksheet.Name = "Performance Indicators Report";
+
+                        #region Styles
+                        var headerStyle = workbook.Styles.Add("headerStyle");
+
+                        headerStyle.BeginUpdate();
+                        headerStyle.Color = Syncfusion.Drawing.Color.Black;
+                        headerStyle.VerticalAlignment = ExcelVAlign.VAlignCenter;
+                        headerStyle.Font.Bold = true;
+                        headerStyle.Font.FontName = "Arial";
+                        headerStyle.Font.Size = 8f;
+                        headerStyle.Font.Color = ExcelKnownColors.White;
+
+                        headerStyle.HorizontalAlignment = ExcelHAlign.HAlignCenter;
+                        headerStyle.Borders.Color = ExcelKnownColors.White;
+                        headerStyle.Borders[ExcelBordersIndex.EdgeLeft].LineStyle = ExcelLineStyle.Thin;
+                        headerStyle.Borders[ExcelBordersIndex.EdgeRight].LineStyle = ExcelLineStyle.Thin;
+                        headerStyle.Borders[ExcelBordersIndex.EdgeTop].LineStyle = ExcelLineStyle.Thin;
+
+                        headerStyle.WrapText = true;
+
+                        headerStyle.EndUpdate();
+
+                        var Style = workbook.Styles.Add("bodyStyle");
+
+                        Style.BeginUpdate();
+                        Style.HorizontalAlignment = ExcelHAlign.HAlignLeft;
+                        Style.VerticalAlignment = ExcelVAlign.VAlignTop;
+                        Style.Font.Bold = false;
+                        Style.Font.FontName = "Arial";
+                        Style.Font.Size = 8f;
+                        Style.Font.Color = ExcelKnownColors.Black;
+                        Style.WrapText = true;
+                        Style.Borders.Color = ExcelKnownColors.Black;
+                        Style.Borders[ExcelBordersIndex.EdgeLeft].LineStyle = ExcelLineStyle.Thin;
+                        Style.Borders[ExcelBordersIndex.EdgeRight].LineStyle = ExcelLineStyle.Thin;
+                        Style.Borders[ExcelBordersIndex.EdgeTop].LineStyle = ExcelLineStyle.Thin;
+                        Style.Borders[ExcelBordersIndex.EdgeBottom].LineStyle = ExcelLineStyle.Thin;
+                        Style.EndUpdate();
+
+
+                        var CategoryStyle = workbook.Styles.Add("CategoryStyle");
+
+                        CategoryStyle.BeginUpdate();
+                        CategoryStyle.HorizontalAlignment = ExcelHAlign.HAlignCenter;
+                        CategoryStyle.Color = Syncfusion.Drawing.Color.FromArgb(0, 255, 255);
+                        CategoryStyle.Font.Bold = true;
+                        CategoryStyle.Font.FontName = "Arial";
+                        CategoryStyle.Font.Size = 20f;
+                        CategoryStyle.Font.Color = ExcelKnownColors.Brown;
+                        CategoryStyle.WrapText = true;
+                        CategoryStyle.Borders.Color = ExcelKnownColors.White;
+                        CategoryStyle.Borders[ExcelBordersIndex.EdgeLeft].LineStyle = ExcelLineStyle.Thin;
+                        CategoryStyle.Borders[ExcelBordersIndex.EdgeRight].LineStyle = ExcelLineStyle.Thin;
+                        CategoryStyle.Borders[ExcelBordersIndex.EdgeTop].LineStyle = ExcelLineStyle.Thin;
+                        CategoryStyle.Borders[ExcelBordersIndex.EdgeBottom].LineStyle = ExcelLineStyle.Thin;
+                        CategoryStyle.EndUpdate();
+
+                        var DivisionStyle = workbook.Styles.Add("DivisionStyle");
+
+                        DivisionStyle.BeginUpdate();
+                        DivisionStyle.HorizontalAlignment = ExcelHAlign.HAlignCenter;
+                        DivisionStyle.Color = Syncfusion.Drawing.Color.FromArgb(255, 0, 0); //RED
+                        DivisionStyle.Font.Bold = true;
+                        DivisionStyle.Font.FontName = "Arial";
+                        DivisionStyle.Font.Size = 8f;
+                        DivisionStyle.Font.Color = ExcelKnownColors.White;
+                        DivisionStyle.WrapText = true;
+                        DivisionStyle.Borders.Color = ExcelKnownColors.White;
+                        DivisionStyle.Borders[ExcelBordersIndex.EdgeLeft].LineStyle = ExcelLineStyle.None;
+                        DivisionStyle.Borders[ExcelBordersIndex.EdgeRight].LineStyle = ExcelLineStyle.None;
+                        DivisionStyle.Borders[ExcelBordersIndex.EdgeTop].LineStyle = ExcelLineStyle.None;
+                        DivisionStyle.Borders[ExcelBordersIndex.EdgeBottom].LineStyle = ExcelLineStyle.None;
+                        DivisionStyle.EndUpdate();
+
+                        #endregion
+
+                        int row = 1;
+                        worksheet.Range["A" + row].Text = "Performance Indicators Report";
+                        worksheet.Range["A" + row + ":J" + row].CellStyle = CategoryStyle;
+                        worksheet.Range["A" + row + ":J" + row].CellStyle.HorizontalAlignment = ExcelHAlign.HAlignCenter;
+                        worksheet.Range["A" + row + ":J" + row].CellStyle.VerticalAlignment = ExcelVAlign.VAlignCenter;
+                        worksheet.Range["A" + row].RowHeight = 30;
+                        worksheet.Range["A" + row + ":J" + row].Merge();
+                        row++;
+
+                        worksheet.Range["A" + row].Text = "#";
+                        worksheet.Range["A" + row].CellStyle = headerStyle;
+                        worksheet.Range["A" + row].ColumnWidth = 5;
+                        worksheet.Range["A" + row].WrapText = true;
+
+                        worksheet.Range["B" + row].Text = "Financial Year";
+                        worksheet.Range["B" + row].CellStyle = headerStyle;
+                        worksheet.Range["B" + row].ColumnWidth = 10;
+                        worksheet.Range["B" + row].WrapText = true;
+
+                        worksheet.Range["C" + row].Text = "Region";
+                        worksheet.Range["C" + row].CellStyle = headerStyle;
+                        worksheet.Range["C" + row].ColumnWidth = 10;
+                        worksheet.Range["C" + row].WrapText = true;
+
+                        worksheet.Range["D" + row].Text = "District";
+                        worksheet.Range["D" + row].CellStyle = headerStyle;
+                        worksheet.Range["D" + row].ColumnWidth = 10;
+                        worksheet.Range["D" + row].WrapText = true;
+
+                        worksheet.Range["E" + row].Text = "Quarter1";
+                        worksheet.Range["E" + row].CellStyle = headerStyle;
+                        worksheet.Range["E" + row].ColumnWidth = 10;
+                        worksheet.Range["E" + row].WrapText = true;
+
+                        worksheet.Range["F" + row].Text = "Quarter2";
+                        worksheet.Range["F" + row].CellStyle = headerStyle;
+                        worksheet.Range["F" + row].ColumnWidth = 10;
+                        worksheet.Range["F" + row].WrapText = true;
+
+                        worksheet.Range["G" + row].Text = "Quarter3";
+                        worksheet.Range["G" + row].CellStyle = headerStyle;
+                        worksheet.Range["G" + row].ColumnWidth = 10;
+                        worksheet.Range["G" + row].WrapText = true;
+
+                        worksheet.Range["H" + row].Text = "Quarter4";
+                        worksheet.Range["H" + row].CellStyle = headerStyle;
+                        worksheet.Range["H" + row].ColumnWidth = 10;
+                        worksheet.Range["H" + row].WrapText = true;
+
+                        worksheet.Range["I" + row].Text = "Target";
+                        worksheet.Range["I" + row].CellStyle = headerStyle;
+                        worksheet.Range["I" + row].ColumnWidth = 10;
+                        worksheet.Range["I" + row].WrapText = true;
+
+                        worksheet.Range["J" + row].Text = "% Achievement";
+                        worksheet.Range["J" + row].CellStyle = headerStyle;
+                        worksheet.Range["J" + row].ColumnWidth = 10;
+                        worksheet.Range["J" + row].WrapText = true;
+
+                        row++;
+
+                        int count = 1;
+                        var vb = IndicatorsData.Select(o => new { o.IndicatorId, o.IndicatorDescription }).Distinct().ToList();
+
+                        foreach (var x in vb)
+                        {
+                            var IndData = data.Where(o => o.IndicatorId == x.IndicatorId).ToList();
+                            if (IndData.Count > 0)
+                            {
+                                #region Header
+                                worksheet.Range["A" + row].Text = "INDICATOR: " + x.IndicatorDescription;
+                                worksheet.Range["A" + row + ":J" + row].CellStyle = DivisionStyle;
+                                worksheet.Range["A" + row + ":J" + row].Merge();
+                                worksheet.Range["A" + row + ":J" + row].WrapText = true;
+                                worksheet.Range["A" + row + ":J" + row].RowHeight=20;
+                                worksheet.Range["A" + row].CellStyle.HorizontalAlignment = ExcelHAlign.HAlignLeft;
+
+                                #endregion
+                                row++;
+
+                                foreach (var n in IndData)
+                                {
+                                    worksheet.Range["A" + row].Text = count.ToString();
+
+                                    if (n.Year.HasValue)
+                                    {
+                                        worksheet.Range["B" + row].Number = n.Year.Value;
+                                    }
+
+                                    worksheet.Range["C" + row].Text = n.Region;
+
+                                    worksheet.Range["D" + row].Text = n.District;
+
+                                    worksheet.Range["E" + row].Number = n.Quarter1;
+
+                                    worksheet.Range["F" + row].Number = n.Quarter2;
+
+                                    worksheet.Range["G" + row].Number = n.Quarter3;
+
+                                    worksheet.Range["H" + row].Number = n.Quarter4;
+
+                                    if (n.Target.HasValue)
+                                    {
+                                        worksheet.Range["I" + row].Number = n.Target.Value;
+                                    }
+
+                                    worksheet.Range["J" + row].Number = n.PercentageAchievement;
+
+                                    //double Achievement = 0;
+                                    //if ((n.Target.HasValue && n.Actual.HasValue))
+                                    //{
+                                    //    var a = Convert.ToDouble(n.Target) / Convert.ToDouble(n.Actual);
+                                    //    Achievement = Math.Round((a) * 100,1);
+
+                                    //    worksheet.Range["H" + row].Number = Achievement;
+                                    //}
+
+                                    row += 1;
+                                    count++;
+                                }
+                            }
+                        }
+
+                        MemoryStream ms = new MemoryStream();
+                        // Save and close the document.
+                        workbook.SaveAs(ms);
+                        //Reset the memory stream position.
+                        ms.Position = 0;
+                        string _filename = "Performance Indicators Report.xlsx";
+                        var path = hostEnvironment.WebRootPath + $@"\DownloadReport\{_filename}";
+                        if (!System.IO.File.Exists(path))
+                        {
+                            FileStream filestream = new FileStream(path, FileMode.Create, FileAccess.ReadWrite);
+                            ms.WriteTo(filestream);
+                            await Task.Delay(15000);
+                            filestream.Dispose();
+                        }
+                        else
+                        {
+                            System.IO.File.Delete(path);
+                            FileStream filestream = new FileStream(path, FileMode.Create, FileAccess.ReadWrite);
+                            ms.WriteTo(filestream);
+                            await Task.Delay(15000);
+                            filestream.Dispose();
+                        }
+                        filename = _filename;
+                        await JS.SaveAs("Performance Indicators Report.xlsx", ms.ToArray());
+                        ms.Dispose();
+                        workbook.Close();
+                        InputModel.Response = "Report Downloaded Successfully";
+
+                    }
+                }
+                else
+                {
+                    InputModel.Response = "There were no records found that match the given search parameters";
+                    Downloadreport = false;
+                    StateHasChanged();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await ToastObj.Show(new ToastModel { Title = "Error!", Content = ex.Message.ToString(), CssClass = "e-toast-danger", Icon = "e-error toast-icons" });
+
+        }
+        finally
+        {
+            Downloadreport = false;
+            await DownloadingSpinner.HideAsync();
+            await Task.CompletedTask;
+            StateHasChanged();
+        }
+    }
+
+    public void OnRegionChange(Syncfusion.Blazor.DropDowns.MultiSelectChangeEventArgs<int?[]> args)
+    {
+        if (args.Value != null)
+        {
+            using (var db = new USAID_ICANContext())
+            {
+                DistrictData = db.ViewADistricts.Where(o => args.Value.Any(a => a == o.RegionId) == true).ToList();
+                isEnabled = true;
+            }
+        }
+    }
+
+    public void OnIndicatorChange(Syncfusion.Blazor.DropDowns.MultiSelectChangeEventArgs<int?[]> args)
+    {
+        if (args.Value != null)
+        {
+            using (var db = new USAID_ICANContext())
+            {
+                IndicatorFilterData = db.View2022indicatorFilter.Where(o => args.Value.Any(a => a ==o.FinancialYearId) == true).ToList();
+                isindicatorEnabled = true;
+            }
+        }
+    }
+}

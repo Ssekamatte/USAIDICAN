@@ -1,0 +1,90 @@
+﻿@page "/MapStaticPage"
+@using USAIDICANBLAZOR.Data;
+@using Microsoft.EntityFrameworkCore;
+@using Microsoft.AspNetCore.Identity;
+@using Microsoft.AspNetCore.Identity.UI.Services;
+@using USAIDICANBLAZOR.Models;
+@using Microsoft.Extensions.Logging;
+@inject NavigationManager NavManager;
+@inject IJSRuntime JS;
+@inject SignInManager<IdentityUser> _signInManager;
+@inject UserManager<IdentityUser> _userManager;
+@inject UserManagement userManagement;
+
+<style>
+    /*body {
+        margin: 0px;
+        padding: 0px;
+        background: url(../image/BackgroundImage.png);
+        background-attachment: fixed;
+        background-repeat: repeat;
+        background-size: cover;
+        background-position-y: -68px;
+        height: 100%;
+        background-color: #000 !important;*/
+    /*font-family: 'Roboto', 'Roboto Condensed' !important;*/
+    /*width: 100%;
+        overflow-x: hidden !important;
+    }*/
+    .carousel {
+        position: relative;
+        /*margin-top: -5.5vh;
+        margin-left: -2rem;
+        margin-right: -1.5rem;*/
+        height: 100vh;
+    }
+
+    h3 {
+        color: #FFBF00;
+        font-family: Cambria;
+    }
+
+    .wrap {
+        /*background: #fff0;*/
+        /*background-color: transparent;*/
+        background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .centerImage {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        /*width: 50%;*/
+    }
+
+    .circle {
+        /*width: 60%;
+        height: 40vh;
+        position: absolute;
+        opacity: 0.3;*/
+        /*border-radius: 100%;*/
+        /*background-color: red;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        z-index: 200;*/
+
+        position: absolute;
+        /*background-color: rgba(0, 0, 0, 0.4);*/
+        /*opacity: 0.2;*/
+        display: flex;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        margin: auto;
+        /*max-height: 80vh;*/
+        width: 80%;
+        z-index: 200;
+    }
+
+    .maindiv {
+        position: relative;
+        margin-top: -5.5vh;
+        margin-left: -2rem;
+        margin-right: -1.5rem;
+        height: 100vh;
+    }
+</style>
+
+<img src="/Login/images/IcanMap.png" style="margin-top:10vh; width:100%;height:80vh;" class="centerImage" />

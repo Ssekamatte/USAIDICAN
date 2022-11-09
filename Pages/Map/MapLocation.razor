@@ -1,0 +1,176 @@
+﻿@page "/MapsPage"
+@using USAIDICANBLAZOR.Models;
+@using USAIDICANBLAZOR.Data;
+
+<style>
+    h5 {
+        color: red;
+        text-align: center;
+        font-family: Cambria, Cochin, Georgia, Times, Times New Roman, serif;
+        background-color: whitesmoke;
+    }
+</style>
+
+<h5>Area of Operation</h5>
+
+<button @onclick="PrintMap">Print Map</button>
+<button @onclick="ExportMap">Export Image</button>
+
+@if (CountryShapeData != null)
+{
+    <SfMaps @ref="maps" AllowPrint="true" AllowImageExport="true" BaseLayerIndex="1" Height="80vh">
+        <MapsZoomSettings Enable="true" EnablePanning="true">
+            <MapsZoomToolbarSettings BackgroundColor="black" BorderColor="red" BorderOpacity="1" BorderWidth="3" Orientation="Syncfusion.Blazor.Maps.Orientation.Horizontal"
+                                     HorizontalAlignment="Syncfusion.Blazor.Maps.Alignment.Far" VerticalAlignment="Syncfusion.Blazor.Maps.Alignment.Near"></MapsZoomToolbarSettings>
+        </MapsZoomSettings>
+        <MapsEvents Loaded="@LoadedEvent"></MapsEvents>
+        <MapsLayers>
+
+            <MapsLayer TValue="string" ShapeData="CountryShapeData">
+                <MapsShapeSettings Fill="#E5E5E5">
+                    <MapsShapeBorder Color="black" Width="0.25"></MapsShapeBorder>
+                </MapsShapeSettings>
+                <MapsDataLabelSettings Visible="false" LabelPath="DName2019"></MapsDataLabelSettings>
+                <MapsLayerTooltipSettings Visible="true" ValuePath="DName2019"></MapsLayerTooltipSettings>
+            </MapsLayer>
+
+            <MapsLayer ShapeData="GuluShapeData"
+                       Type="Syncfusion.Blazor.Maps.Type.SubLayer" TValue="string">
+                <MapsShapeSettings Fill="purple">
+                    <MapsShapeBorder Color="#1a9cff" Width="0.25"></MapsShapeBorder>
+                </MapsShapeSettings>
+                <MapsDataLabelSettings Visible="true" LabelPath="DName2019"></MapsDataLabelSettings>
+                <MapsLayerTooltipSettings Visible="true" ValuePath="DName2019"></MapsLayerTooltipSettings>
+            </MapsLayer>
+
+            <MapsLayer ShapeData="KaabongShapeData"
+                       Type="Syncfusion.Blazor.Maps.Type.SubLayer" TValue="string">
+                <MapsShapeSettings Fill="purple">
+                    <MapsShapeBorder Color="#1a9cff" Width="0.25"></MapsShapeBorder>
+                </MapsShapeSettings>
+                <MapsDataLabelSettings Visible="true" LabelPath="DName2019"></MapsDataLabelSettings>
+                <MapsLayerTooltipSettings Visible="true" ValuePath="DName2019"></MapsLayerTooltipSettings>
+            </MapsLayer>
+
+            <MapsLayer ShapeData="KanunguShapeData"
+                       Type="Syncfusion.Blazor.Maps.Type.SubLayer" TValue="string">
+                <MapsShapeSettings Fill="purple">
+                    <MapsShapeBorder Color="#1a9cff" Width="0.25"></MapsShapeBorder>
+                </MapsShapeSettings>
+                <MapsDataLabelSettings Visible="true" LabelPath="DName2019"></MapsDataLabelSettings>
+                <MapsLayerTooltipSettings Visible="true" ValuePath="DName2019"></MapsLayerTooltipSettings>
+            </MapsLayer>
+
+            <MapsLayer ShapeData="KisoroShapeData"
+                       Type="Syncfusion.Blazor.Maps.Type.SubLayer" TValue="string">
+                <MapsShapeSettings Fill="purple">
+                    <MapsShapeBorder Color="#1a9cff" Width="0.25"></MapsShapeBorder>
+                </MapsShapeSettings>
+                <MapsDataLabelSettings Visible="true" LabelPath="DName2019"></MapsDataLabelSettings>
+                <MapsLayerTooltipSettings Visible="true" ValuePath="DName2019"></MapsLayerTooltipSettings>
+            </MapsLayer>
+
+            <MapsLayer ShapeData="KotidoShapeData"
+                       Type="Syncfusion.Blazor.Maps.Type.SubLayer" TValue="string">
+                <MapsShapeSettings Fill="purple">
+                    <MapsShapeBorder Color="#white" Width="0.25"></MapsShapeBorder>
+                </MapsShapeSettings>
+                <MapsDataLabelSettings Visible="true" LabelPath="DName2019"></MapsDataLabelSettings>
+                <MapsLayerTooltipSettings Visible="true" ValuePath="DName2019"></MapsLayerTooltipSettings>
+            </MapsLayer>
+
+            <MapsLayer ShapeData="LamwoShapeData"
+                       Type="Syncfusion.Blazor.Maps.Type.SubLayer" TValue="string">
+                <MapsShapeSettings Fill="purple">
+                    <MapsShapeBorder Color="#1a9cff" Width="0.25"></MapsShapeBorder>
+                </MapsShapeSettings>
+                <MapsDataLabelSettings Visible="true" LabelPath="DName2019"></MapsDataLabelSettings>
+                <MapsLayerTooltipSettings Visible="true" ValuePath="DName2019"></MapsLayerTooltipSettings>
+            </MapsLayer>
+
+            <MapsLayer ShapeData="NwoyaShapeData"
+                       Type="Syncfusion.Blazor.Maps.Type.SubLayer" TValue="string">
+                <MapsShapeSettings Fill="purple">
+                    <MapsShapeBorder Color="#1a9cff" Width="0.25"></MapsShapeBorder>
+                </MapsShapeSettings>
+                <MapsDataLabelSettings Visible="true" LabelPath="DName2019"></MapsDataLabelSettings>
+                <MapsLayerTooltipSettings Visible="true" ValuePath="DName2019"></MapsLayerTooltipSettings>
+            </MapsLayer>
+
+            <MapsLayer ShapeData="RukungiriShapeData"
+                       Type="Syncfusion.Blazor.Maps.Type.SubLayer" TValue="string">
+                <MapsShapeSettings Fill="purple">
+                    <MapsShapeBorder Color="#1a9cff" Width="0.25"></MapsShapeBorder>
+                </MapsShapeSettings>
+                <MapsDataLabelSettings Visible="true" LabelPath="DName2019"></MapsDataLabelSettings>
+                <MapsLayerTooltipSettings Visible="true" ValuePath="DName2019"></MapsLayerTooltipSettings>
+            </MapsLayer>
+        </MapsLayers>
+    </SfMaps>
+
+    <SfSpinner @ref="UploadingSpinner" Visible="true" Label="Map Loading....." Size="50"></SfSpinner>
+}
+@code{
+
+    public object CountryShapeData { get; set; }
+    public object GuluShapeData { get; set; }
+    public object KaabongShapeData { get; set; }
+    public object KanunguShapeData { get; set; }
+    public object KisoroShapeData { get; set; }
+    public object KotidoShapeData { get; set; }
+    public object LamwoShapeData { get; set; }
+    public object NwoyaShapeData { get; set; }
+    public object RukungiriShapeData { get; set; }
+
+    SfSpinner UploadingSpinner;
+    SfMaps maps;
+
+    //Printing Map
+    void PrintMap()
+    {
+        // using Maps component reference call 'Print' method
+        this.maps.Print();
+    }
+
+    //Exporting Map as Image
+    void ExportMap()
+    {
+        this.maps.Export(Syncfusion.Blazor.Maps.ExportType.PNG, "Maps");
+    }
+
+    public async void LoadedEvent(Syncfusion.Blazor.Maps.LoadedEventArgs args)
+    {
+        await UploadingSpinner.HideAsync();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        string countrymap = System.IO.File.ReadAllText("wwwroot/Maps/UG_Districts-2019.geojson");
+        CountryShapeData = Newtonsoft.Json.JsonConvert.DeserializeObject(countrymap);
+
+        string Gulumap = System.IO.File.ReadAllText("wwwroot/Maps/Gulu.geojson");
+        GuluShapeData = Newtonsoft.Json.JsonConvert.DeserializeObject(Gulumap);
+
+        string Kaabongmap = System.IO.File.ReadAllText("wwwroot/Maps/Kaabong.geojson");
+        KaabongShapeData = Newtonsoft.Json.JsonConvert.DeserializeObject(Kaabongmap);
+
+        string Kanungumap = System.IO.File.ReadAllText("wwwroot/Maps/Kanungu.geojson");
+        KanunguShapeData = Newtonsoft.Json.JsonConvert.DeserializeObject(Kanungumap);
+
+        string Kisoromap = System.IO.File.ReadAllText("wwwroot/Maps/Kisoro.geojson");
+        KisoroShapeData = Newtonsoft.Json.JsonConvert.DeserializeObject(Kisoromap);
+
+        string Kotidomap = System.IO.File.ReadAllText("wwwroot/Maps/Kotido.geojson");
+        KotidoShapeData = Newtonsoft.Json.JsonConvert.DeserializeObject(Kotidomap);
+
+        string Lamwomap = System.IO.File.ReadAllText("wwwroot/Maps/Lamwo.geojson");
+        LamwoShapeData = Newtonsoft.Json.JsonConvert.DeserializeObject(Lamwomap);
+
+        string Nwoyamap = System.IO.File.ReadAllText("wwwroot/Maps/Nwoya.geojson");
+        NwoyaShapeData = Newtonsoft.Json.JsonConvert.DeserializeObject(Nwoyamap);
+
+        string Rukungirimap = System.IO.File.ReadAllText("wwwroot/Maps/Rukungiri.geojson");
+        RukungiriShapeData = Newtonsoft.Json.JsonConvert.DeserializeObject(Rukungirimap);
+    }
+
+}

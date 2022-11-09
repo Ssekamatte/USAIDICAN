@@ -1,0 +1,235 @@
+﻿@using USAIDICANBLAZOR.Data;
+@inject UserManagement userManagement;
+@using USAIDICANBLAZOR.Models
+<style>
+</style>
+<AuthorizeView>
+    <Authorized>
+        <SfMenu Items="@menuItems" HamburgerMode="true" TValue="MenuItem" EnableScrolling="true" ShowItemOnClick="true"></SfMenu>
+        <SfMenu Items="@menuItems" HamburgerMode="false" TValue="MenuItem" EnableScrolling="true" ShowItemOnClick="false"></SfMenu>
+    </Authorized>
+    <NotAuthorized>
+        @* <SfMenu Items="@menuItems" TValue="MenuItem" EnableScrolling="true" ShowItemOnClick="true"></SfMenu>*@
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    public List<MenuItem> menuItems = new List<MenuItem>();
+    protected override void OnAfterRender(bool firstRender)
+    {
+        var isSignedIn = userManagement.IsSignedIn();
+        if (isSignedIn)
+        {
+            bool HasRole = false;
+            bool Administrator = false;
+            bool user = false;
+            bool SuperAdministrator = false;
+            bool RegionalME = false;
+
+            using (var db = new USAID_ICANContext())
+            {
+                var data = db.View2022UserManagement.FirstOrDefault(o => o.UserName == userManagement.GetUserName());
+                if (data != null)
+                {
+                    if (!string.IsNullOrEmpty(data.RoleName))
+                    {
+                        HasRole = true;
+                    }
+                    if (data.RoleName.Contains("Super Administrator"))
+                    {
+                        SuperAdministrator = true;
+                    }
+
+                    else if (data.RoleName.Contains("Administrator"))
+                    {
+                        Administrator = true;
+                    }
+
+                    else if (data.RoleName.Contains("user"))
+                    {
+                        user = true;
+                    }
+                    else if (data.RoleName.Contains("Regional M&E Officer"))
+                    {
+                        RegionalME = true;
+                    }
+                }
+            }
+
+            if (HasRole==true)
+            {
+                if (SuperAdministrator == true || Administrator == true || user == true)
+                {
+                    menuItems.Add(
+                      new MenuItem
+                      {
+                          Text = "GENERAL"
+                          ,
+                          IconCss = "fa fa-ravelry"
+                          ,
+                          Items = new List<MenuItem>
+                            {
+                                    new MenuItem{ Text = "ICAN POPULATION",  Url= "/ICANPopulationDashboardRazorPage",IconCss="fa fa-users"},
+                                    new MenuItem{ Separator=true},
+                                    new MenuItem{ Text = "WHERE WE WORK",  Url= "/MapStaticPage",IconCss="fa fa-podcast"},
+                            }
+                      });
+                }
+                else {
+                    menuItems.Add(
+                      new MenuItem
+                      {
+                          Text = "GENERAL"
+                          ,
+                          IconCss = "fa fa-ravelry"
+                          ,
+                          Items = new List<MenuItem>
+                            {
+                                    new MenuItem{ Text = "ICAN POPULATION",  Url= "/ICANPopulationDashboardRazorPage",IconCss="fa fa-users"},
+                                    new MenuItem{ Separator=true},
+                                    new MenuItem{ Text = "WHERE WE WORK",  Url= "/MapStaticPage",IconCss="fa fa-podcast"},
+                            }
+                      });
+                }
+                if (SuperAdministrator == true || Administrator == true || RegionalME == true)
+                {
+                    menuItems.Add(
+                  new MenuItem
+                  {
+                      Text = "DASHBOARDS"
+                      ,
+                      IconCss = "fa fa-tachometer"
+                      ,
+                      Items = new List<MenuItem>
+                        {
+                                  new MenuItem{ Text = "CROSS CUTTING",  Url="/CrossCuttingDashboardRazorPage",IconCss="fa fa-crosshairs"},
+                                  new MenuItem{ Separator=true},
+                                  new MenuItem{ Text = "GATEWAY",  Url="/GatewayDashboardRazorPage",IconCss="fa fa-glide"},
+                                  new MenuItem{ Separator=true},
+                                  new MenuItem{ Text = "GOVERNANCE",  Url="/GovernanceDashboardRazorPage",IconCss="fa fa-space-shuttle"},
+                                  new MenuItem{ Separator=true},
+                                  new MenuItem{ Text = "LIVELIHOOD",  Url="/LivelihoodDashboardRazorPage",IconCss="fa fa-line-chart"},
+                                  new MenuItem{ Separator=true},
+                                  new MenuItem{ Text = "NUTRITION AND HEALTH",  Url="/NutritionandHealthRazorPage",IconCss="fa fa-cutlery"},
+                                  new MenuItem{ Separator=true},
+
+                                  new MenuItem { Text = "PERFORMANCE INDICATORS",IconCss="fa fa-signal", Items= new List
+                                  <MenuItem>
+                                  ()
+                                  {
+                                  new MenuItem { Text = "ENTER TARGET", Url = "/AddUpdateTarget",IconCss="fa fa-handshake-o"},
+                                  new MenuItem { Separator = true },
+                                  new MenuItem { Text = "DATA ENTRY", Url = "/PerformanceIndicatorsPage",IconCss="fa fa-american-sign-language-interpreting"},
+                                  new MenuItem { Separator = true },
+                                  new MenuItem { Text = "REPORT", Url = "/PerformanceIndicatorsReport",IconCss="fa fa-flag"},
+                                  }
+                                },
+                      }
+                  }
+                    );
+                }
+                else
+                {
+                    menuItems.Add(
+                  new MenuItem
+                  {
+                      Text = "DASHBOARDS"
+                      ,
+                      IconCss = "fa fa-tachometer"
+                      ,
+                      Items = new List<MenuItem>
+                        {
+                                  new MenuItem{ Text = "CROSS CUTTING",  Url="/CrossCuttingDashboardRazorPage",IconCss="fa fa-crosshairs"},
+                                  new MenuItem{ Separator=true},
+                                  new MenuItem{ Text = "GATEWAY",  Url="/GatewayDashboardRazorPage",IconCss="fa fa-glide"},
+                                  new MenuItem{ Separator=true},
+                                  new MenuItem{ Text = "GOVERNANCE",  Url="/GovernanceDashboardRazorPage",IconCss="fa fa-space-shuttle"},
+                                  new MenuItem{ Separator=true},
+                                  new MenuItem{ Text = "LIVELIHOOD",  Url="/LivelihoodDashboardRazorPage",IconCss="fa fa-line-chart"},
+                                  new MenuItem{ Separator=true},
+                                  new MenuItem{ Text = "NUTRITION AND HEALTH",  Url="/NutritionandHealthRazorPage",IconCss="fa fa-cutlery"},
+                                  new MenuItem{ Separator=true},
+
+                                  new MenuItem { Text = "PERFORMANCE INDICATORS",IconCss="fa fa-signal", Items= new List
+                                  <MenuItem>
+                                  ()
+                                  {
+                                  //new MenuItem { Text = "ENTER TARGET", Url = "/AddUpdateTarget",IconCss="fa fa-handshake-o"},
+                                  //new MenuItem { Separator = true },
+                                  new MenuItem { Text = "DATA ENTRY", Url = "/PerformanceIndicatorsPage",IconCss="fa fa-american-sign-language-interpreting"},
+                                  new MenuItem { Separator = true },
+                                  new MenuItem { Text = "REPORT", Url = "/PerformanceIndicatorsReport",IconCss="fa fa-flag"},
+                                  }
+                                },
+                      }
+                  }
+                    );
+                }
+            }
+
+            if (SuperAdministrator == true || Administrator == true)
+            {
+                menuItems.Add(
+                new MenuItem
+                {
+                    Text = "UTILITIES"
+                    ,
+                    IconCss = "fa fa-wrench"
+                    ,
+                    Items = new List
+                <MenuItem>
+                    {
+                    new MenuItem{ Text = "ADD INDICATORS",  Url="/AddIndicators",IconCss="fa fa-crosshairs"},
+                    new MenuItem { Separator = true },
+                    new MenuItem { Text = "MANAGE USERS",IconCss="fa fa-eye", Items= new List
+                    <MenuItem>
+                        ()
+                        {
+                        new MenuItem { Text = "ACCOUNT MANAGEMENT", Url = "/Account/UserManagementPage",IconCss="fa fa-eye"},
+                        new MenuItem { Separator = true },
+                        new MenuItem { Text = "MANAGE USER PASSWORDS", Url = "/Account/ChangeUserPasswordPage",IconCss="fa fa-codepen"},
+                        new MenuItem { Separator = true },
+                        new MenuItem { Text = "REGISTER SYSTEM USER", Url = "/Account/RegisterUserPage",IconCss="fa fa-jsfiddle"},
+                        }
+                        },
+
+                    new MenuItem{ Separator=true},
+
+                    new MenuItem { Text = "POPULATION",IconCss="fa fa-users", Items= new List
+                    <MenuItem>
+                        ()
+                        {
+                        new MenuItem { Text = "TEMPLATE FORM",IconCss="fa fa-cloud-download", Url = "PopulationTemplate.xlsx"},
+                        //new MenuItem { Separator = true },
+                        //new MenuItem { Text = "USER MANUAL",IconCss="fa fa-book", Url = "UserManual.pdf"},
+                        new MenuItem { Separator = true },
+                        new MenuItem { Text = "POPULATION UPLOAD",IconCss="fa fa-cloud-upload", Url = "/PopulationUploadPage"},
+                        }
+                        }
+                     }                     
+                }
+                );
+            }
+
+            menuItems.Add(
+            new MenuItem
+            {
+                Text = "HELLO " + userManagement.GetStaffName().ToUpper() + " !",
+                IconCss = "fa fa-user",
+                //Text = "HELLO " + userManagement.GetUserCountryDesc().ToUpper() + " !",
+                //IconCss = "fa fa-user",
+                Id = "LoginMenu",
+                Items = new List
+            <MenuItem>
+                {
+                new MenuItem{ Text = "CHANGE PASSWORD",  Url="/Account/ChangePasswordPage",IconCss="fa fa-key"},
+                new MenuItem{ Separator=true},
+                new MenuItem{ Text = "LOG OUT",  Url="/",IconCss="fa fa-sign-out"},
+                }
+            }
+                );
+        }
+
+        base.OnAfterRender(firstRender);
+    }
+}

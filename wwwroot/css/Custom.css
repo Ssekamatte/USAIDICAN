@@ -1,0 +1,50 @@
+﻿.dropdown-item {
+    color: white;
+}
+.navbar-expand-lg .navbar-nav .dropdown-menu {
+    background-color: black;
+    color: white;
+}
+.dropdown-toggle {
+    color: white;
+}
+button.btn.btn-dark.dropdown-toggle{
+    border-color:transparent;
+    background-color:transparent;
+    border-style:none;
+}
+
+@media(min-width:992px) {
+    .navbar-expand-lg .navbar-nav .dropdown-menu {
+        position: absolute;
+        left: 85%;
+        top: 3.5vh;
+        background-color:black;
+        color:white;
+    }
+
+        .navbar-expand-lg .navbar-nav .dropdown-menu .dropdown-menu-right {
+            left: -140%;
+            top: 3.5vh;
+            right:85%;
+        }
+        .navbar-expand-lg .navbar-nav .dropdown-menu .dropdown-Login-right {
+            left: -100%;
+            top: 3.5vh;
+            right: 80%;
+        }
+    .dropdown-toggle {
+        white-space: nowrap;
+        margin-right: 10px;
+    }
+
+    div.dropdown-menu.show.dropdown-menu-right {
+        left: -150%;
+        margin-right:15px;
+        width:200px;
+        top: 3.5vh;
+        right: 85%;
+        background-color:black;
+        color:white;
+    }
+}

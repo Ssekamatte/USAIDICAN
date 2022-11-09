@@ -1,0 +1,111 @@
+﻿@page "/ConfirmEmailPage"
+@page "/ConfirmEmailPage/{UserName}"
+@using USAIDICANBLAZOR.Data;
+@using USAIDICANBLAZOR.Models;
+@using Microsoft.EntityFrameworkCore;
+@using Microsoft.AspNetCore.Identity;
+@using Microsoft.AspNetCore.Identity.UI.Services;
+@inject NavigationManager NavManager;
+@inject UserManager<IdentityUser> _userManager;
+    <style>
+        body {
+            margin: 0px;
+            padding: 0px;
+            background: url(../image/bg.png);
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position-y: -68px;
+            height: 100%;
+            background-color: #000 !important;
+            /*font-family: 'Roboto', 'Roboto Condensed' !important;*/
+            width: 100%;
+            overflow-x: hidden !important;
+        }
+
+        .center-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            min-height: 100vh;
+            /*width:40%;*/
+        }
+
+        h3 {
+            color: #FFBF00;
+            font-family: Cambria;
+        }
+
+        p {
+            word-wrap: break-word;
+        }
+    </style>
+
+    <div class="center-screen">
+        <div style="width:35%;">
+            <h3>Email Confirmation</h3>
+            @if (!string.IsNullOrEmpty(Returnmessage))
+            {
+                if (Returnmessage.ToLower().Contains("success"))
+                {
+                    <p class="badge badge-success" style="width:100%; padding:15px; font-family:Cambria;font-size:large;">@Returnmessage</p>
+                }
+                else
+                {
+                    <p class="badge badge-danger" style="width:100%; padding:15px; font-family:Cambria;font-size:large;">@Returnmessage</p>
+                }
+            }
+            <p class="text-center">Return To the login page? <a data-toggle="tab" href="#" @onclick="@BackToLoginClick">Click here</a></p>
+        </div>
+    </div>
+@code {
+    [Parameter]
+    public string UserName { get; set; }
+
+    private string decriptedSring { get; set; }
+    string Returnmessage { get; set; }
+    private void BackToLoginClick()
+    {
+        NavManager.NavigateTo("/", true);
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrEmpty(UserName))
+        {
+            try
+            {
+
+                //byte[] b = Convert.FromBase64String(Code);
+                //decriptedSring = System.Text.ASCIIEncoding.ASCII.GetString(b);
+
+                byte[] c = Convert.FromBase64String(UserName);
+                string _UserName = System.Text.ASCIIEncoding.ASCII.GetString(c);
+
+                //string[] info = decriptedSring.Split(":");
+                var user = await _userManager.FindByNameAsync(_UserName);
+                using(var db = new USAID_ICANContext())
+                {
+                    var exists = db.AspNetEmailConfirmationCode.OrderBy(o=> o.ConfirmationId).LastOrDefault(o => o.UserName == _UserName);
+                    if(exists != null)
+                    {
+                        await _userManager.ConfirmEmailAsync(user, exists.ConfirmationCode);
+
+                        await _userManager.SetLockoutEnabledAsync(user, false);
+
+                        exists.ConfirmationDate = DateTime.Now;
+                        db.Entry(exists).State = EntityState.Modified;
+                        db.SaveChanges();
+                        Returnmessage = "success: Your email has been successfully comfirmed";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Returnmessage = "Error: something went wrong when processing your request, please try again later or contact the administrator.";
+            }
+        }
+        base.OnInitialized();
+    }
+}

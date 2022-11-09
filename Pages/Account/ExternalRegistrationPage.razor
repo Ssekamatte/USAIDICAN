@@ -1,0 +1,210 @@
+﻿@page "/ExternalRegistrationPage"
+@using USAIDICANBLAZOR.Data;
+@using USAIDICANBLAZOR.Models;
+@using Microsoft.EntityFrameworkCore;
+@using Microsoft.AspNetCore.Identity;
+@using Microsoft.AspNetCore.Identity.UI.Services;
+@inject NavigationManager NavManager;
+@inject UserManager<IdentityUser> _userManager;
+@using System.Net;
+@using System.Net.Mail;
+<style>
+    body {
+        margin: 0px;
+        padding: 0px;
+        background: url(../image/bg.png);
+        background-attachment: fixed;
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-position-y: -68px;
+        height: 100%;
+        background-color: #000 !important;
+        /*font-family: 'Roboto', 'Roboto Condensed' !important;*/
+        width: 100%;
+        overflow-x: hidden !important;
+    }
+
+    h3 {
+        color: #FFBF00;
+        font-family: Cambria;
+    }
+
+    p {
+        word-wrap: break-word;
+    }
+</style>
+<div class="row">
+    <div class="col-lg-12 control-section">
+        <SfToast @ref="ToastObj" ID="toast_type">
+            <ToastPosition X="@ToastPosition"></ToastPosition>
+        </SfToast>
+    </div>
+</div>
+<h3 style="margin-left:10%;">Register</h3>
+<EditForm Model="@InputModel" class="form-row" style="margin-left:10%; margin-right:10%;" OnValidSubmit="@RegisterUser">
+    <div class="form-group col-md-6">
+        <label class="label" for="AccountHolderName" style="color:#96CFF0;float:left;">Name</label>
+        <input type="text" id="AccountHolderName" name="AccountHolderName" @bind-value="@InputModel.AccountHolderName" class="form-control" placeholder="Name" required>
+    </div>
+    <div class="form-group col-md-6">
+        <label class="label" for="ConfirmPassword" style="color:#96CFF0;float:left;">Email</label>
+        <input type="email" name="Email" id="Email" @bind-value="@InputModel.Email" class="form-control" placeholder="Email" required>
+    </div>
+    <div class="form-group col-md-6">
+        <label class="label" for="PhoneNumber" style="color:#96CFF0;float:left;">Phone Number</label>
+        <input type="tel" id="PhoneNumber" name="PhoneNumber" @bind-value="@InputModel.PhoneNumber" class="form-control" placeholder="Phone Number" required>
+    </div>
+    <div class="form-group col-md-6">
+        <label class="label" for="UserName" style="color:#96CFF0;float:left;">User Name</label>
+        <input type="text" name="UserName" id="UserName" @bind-value="@InputModel.UserName" class="form-control" placeholder="User Name" required>
+    </div>
+    <div class="form-group col-md-6">
+        <label class="label" for="Password" style="color:#96CFF0;float:left;">Password</label>
+        <input type="password" @bind-value="@InputModel.Password" class="form-control" placeholder="Password" required>
+    </div>
+    <div class="form-group col-md-6">
+        <label class="label" for="ConfirmPassword" style="color:#96CFF0;float:left;">Confirm Password</label>
+        <input type="password" @bind-value="@InputModel.ConfirmPassword" class="form-control" placeholder="Confirm Password" required>
+    </div>
+    <div class="form-group col-md-6">
+    </div>
+    <div class="form-group col-md-6">
+        <button type="submit" class="form-control btn btn-primary rounded submit px-3">Register User</button>
+    </div>
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+</EditForm>
+<p class="text-center">already have an account? <a data-toggle="tab" href="#" @onclick="@BackToLoginClick">login here</a></p>
+@code {
+            #region Toasters
+            public static string ToastContent { get; set; }
+            SfToast ToastObj;
+            SfToast DeleteToastObj;
+            private string ToastPosition = "Right";
+            private int AlarmTimeout { get; set; } = 120000;
+            private List<ToastModel> Toast = new List<ToastModel>
+{
+        new ToastModel{ Title = "Warning!", Content=ToastContent, CssClass="e-toast-warning", Icon="e-warning toast-icons" },
+        new ToastModel{ Title = "Success!", Content=ToastContent, CssClass="e-toast-success", Icon="e-success toast-icons" },
+        new ToastModel{ Title = "Error!", Content=ToastContent, CssClass="e-toast-danger", Icon="e-error toast-icons" },
+        new ToastModel{ Title = "Information!", Content=ToastContent, CssClass="e-toast-info", Icon="e-info toast-icons" }
+    };
+            #endregion Toasters
+            private RegisterViewModel InputModel = new RegisterViewModel();
+
+            protected override void OnInitialized()
+            {
+                InputModel.UserRole = "Administrator";
+                base.OnInitialized();
+            }
+            private void BackToLoginClick()
+            {
+                NavManager.NavigateTo("/", true);
+            }
+
+            private async Task RegisterUser()
+            {
+                try
+                {
+                    var user = new ApplicationUser { UserName = InputModel.UserName, Email = InputModel.Email, PhoneNumber = InputModel.PhoneNumber, LockoutEnabled = false, AccountHolderName = InputModel.AccountHolderName };
+                    var result = await _userManager.CreateAsync(user, InputModel.Password);
+                    if (result.Succeeded)
+                    {
+                        var _result = await _userManager.AddToRoleAsync(user, InputModel.UserRole);
+
+                        if (_result.Succeeded)
+                        {
+                            string url = NavManager.BaseUri;
+                            var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+
+                            using (var dbContext = new USAID_ICANContext())
+                            {
+                                double id = 1;
+                                var _last = dbContext.AspNetEmailConfirmationCode.ToList().LastOrDefault();
+                                if(_last != null)
+                                {
+                                    id = (_last.ConfirmationId + 1);
+                                }
+                                var exist = dbContext.AspNetUsers.FirstOrDefault(o => o.Id == user.Id);
+                                if (exist != null)
+                                {
+                                    //exist.StaffId = InputModel.StaffId;
+                                    exist.NameOfUserAccountHolder = InputModel.AccountHolderName;
+                                    //exist.EmailConfirmed = true;
+                                    //exist.LockoutEnabled = false;
+                                    exist.PhoneNumberConfirmed = true;
+                                    dbContext.Entry(exist).State = EntityState.Modified;
+                                    dbContext.SaveChanges();
+                                }
+                                AspNetEmailConfirmationCode x = new AspNetEmailConfirmationCode()
+                                {
+                                    UserName = InputModel.UserName,
+                                    ConfirmationCode = code,
+                                    CreationDate = DateTime.Now,
+                                    ConfirmationId = id
+                                };
+                                dbContext.AspNetEmailConfirmationCode.Add(x);
+                                dbContext.SaveChanges();
+                            }
+
+                            byte[] c = System.Text.ASCIIEncoding.ASCII.GetBytes(InputModel.UserName);
+                            string username = Convert.ToBase64String(c);
+
+                            string _message = url + "ConfirmEmailPage/"+ username;
+
+                            using (var message = new MailMessage("donotreply@ibs.co.ug", InputModel.Email))
+                            {
+                                message.Subject = "PAU Email Confirmation";
+                                message.Body = "Dear " + InputModel.AccountHolderName + ",<br/><br/>" +
+                                        "<p> Email confirmation is required to access this system.</p>" +
+                                        "<br/> <p>Please click <a href='" + _message + "'>here</a> to confirm your email. Thanks!</p>" +
+                                        "<br/> <br/> Regards,<br/><br/> System notfication, <br/> Petrolium Authority of Uganda.<br/><br/>" + DateTime.Now;
+                                message.IsBodyHtml = true;
+                                using (SmtpClient client = new SmtpClient
+                                {
+                                    EnableSsl = false,
+                                    //Host = "smtp.gmail.com",
+                                    Host = "mail.ibs.co.ug",
+                                    Port = 587,
+                                    //Port = 25,
+                                    DeliveryMethod = SmtpDeliveryMethod.Network,
+                                    //UseDefaultCredentials = true,
+                                    Credentials = new NetworkCredential("donotreply@ibs.co.ug", "**Root@85")
+                                })
+                        {
+                                //client.EnableSsl = true;
+                                client.Send(message);
+                            }
+                        }
+
+                        await ToastObj.Show(new ToastModel { Title = "Success!", Content = InputModel.AccountHolderName + " has been successfully registered!", CssClass = "e-toast-success", Icon = "e-success toast-icons" });
+                    }
+                    else
+                    {
+                        string _error = string.Empty;
+                        foreach (var error in _result.Errors)
+                        {
+                            // ModelState.AddModelError(string.Empty, error.Description);
+                            _error += error.Description + ",";
+                        }
+                        await ToastObj.Show(new ToastModel { Title = "Error!", Content = _error, CssClass = "e-toast-danger", Icon = "e-error toast-icons" });
+                    }
+
+                }
+            else
+                {
+                    string _error = string.Empty;
+                    foreach (var error in result.Errors)
+                    {
+                        // ModelState.AddModelError(string.Empty, error.Description);
+                        _error += error.Description + ",";
+                    }
+                    await ToastObj.Show(new ToastModel { Title = "Error!", Content = _error, CssClass = "e-toast-danger", Icon = "e-error toast-icons" });
+                }
+            }
+        catch (Exception ex)
+        {
+            await ToastObj.Show(new ToastModel { Title = "Error!", Content = ex.ToString(), CssClass = "e-toast-danger", Icon = "e-error toast-icons" });
+        }
+    }
+}

@@ -1,0 +1,220 @@
+﻿@page "/"
+@namespace USAIDICANBLAZOR.Pages
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@{
+    Layout = null;
+}
+@using USAIDICANBLAZOR.Data;
+@inject UserManagement userManagement;
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ICAN</title>
+    <base href="~/" />
+    <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
+    <link href="css/site.css" rel="stylesheet" />
+    <link rel="icon" href="/Login/images/USAIDLogoOnly.svg" sizes="32x32" />
+    <link href="USAIDICANBLAZOR.styles.css" rel="stylesheet" />
+    @*<link href="https://cdn.syncfusion.com/blazor/19.2.62/styles/material.css" rel="stylesheet" />*@
+    <link href="~/css/MaterialStyleSheet.css" rel="stylesheet" />
+    <link href="_content/Syncfusion.Blazor.Themes/material.css" rel="stylesheet" />
+    <link href="_content/Blazored.Toast/blazored-toast.css" rel="stylesheet" />
+    <link href="~/css/Custom.css" rel="stylesheet" />
+    <link href="~/css/font-awesome-4.7.0/css/font-awesome.min.css" rel="stylesheet" />
+    <link href="~/css/Navcss.css" rel="stylesheet" />
+    <link href="~/Login/css/style.css" rel="stylesheet" />
+    <style>
+        /*.mainbody {
+            max-width: 100vw;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }*/
+    </style>
+</head>
+<body class="mainbody">
+    <environment include="Staging,Production">
+        <component render-mode="ServerPrerendered" type="typeof(App)" />
+    </environment>
+    <environment include="Development">
+        <component render-mode="Server" type="typeof(App)" />
+    </environment>
+    <div id="blazor-error-ui">
+        <environment include="Staging,Production">
+            An error has occurred. This application may no longer respond until reloaded.
+        </environment>
+        <environment include="Development">
+            An unhandled exception has occurred. See browser dev tools for details.
+        </environment>
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+
+    <script src="~/js/jquery.min.js"></script>
+    <script src="_framework/blazor.server.js"></script>
+    <script src="_content/BlazorStrap/blazorStrap.js"></script>
+    <script src="_content/BlazorStrap/popper.min.js"></script>
+    <script src="~/js/lodash.min.js"></script>
+    <script src="~/js/Navjs.js"></script>
+
+    <script src="~/Login/js/popper.js"></script>
+    <script src="~/Login/js/bootstrap.min.js"></script>
+    <script src="~/Login/js/main.js"></script>
+    @if (userManagement.IsSignedIn())
+    {
+        <footer>
+            <div class="container body-content" style="margin-right:1px;margin-left:2px;max-width: 98.5%; min-width: 98.5%;">
+                <hr />
+                <p>&copy; @DateTime.Now.Year -USAID/ICAN <b style="float:right;"> @String.Format("{0 : dddd, MMMM d, yyyy}", DateTime.Now) </b></p>
+            </div>
+
+        </footer>
+        <script>
+            let timeInSecondsAfterSessionOut = 1200; // change this to change session time out (in seconds).
+            let secondTick = 0;
+
+            function ResetThisSession() {
+                secondTick = 0;
+            }
+
+            function StartThisSessionTimer() {
+                secondTick++;
+                var timeLeft = ((timeInSecondsAfterSessionOut - secondTick) / 60).toFixed(0); // in minutes
+                timeLeft = timeInSecondsAfterSessionOut - secondTick; // override, we have 30 secs only
+
+                //$("#spanTimeLeft").html(timeLeft);
+                //console.log(timeLeft);
+                if (secondTick > timeInSecondsAfterSessionOut) {
+                    clearTimeout(tick);
+                    window.location = "/";
+                    return;
+                }
+                tick = setTimeout("StartThisSessionTimer()", 1000);
+            }
+
+            StartThisSessionTimer();
+
+            $(function () {
+                $("body").on('click keypress', function () {
+                    ResetThisSession();
+                });
+            });
+        </script>
+    }
+
+    <script>
+        window.Login = (username, password, remeberme, url) => {
+            var _data = {
+                Email: username,
+                Password: password,
+                RememberMe: remeberme
+            };
+            //alert(window.location.protocol+"//"+window.location.hostname + ":" + window.location.port);
+            //var url = "https://localhost:44356/api/LoginAPI";
+            //var url = window.location.protocol + "//" + window.location.hostname + ":" + window.location.port + "/api/LoginAPI";
+            $.ajax({
+                url: url,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                type: 'POST',
+                data: JSON.stringify(_data),
+                success: function (data) {
+                    if (data.succeeded == true) {
+                        window.location = "/Index";
+                    }
+                    else if (data.isLockedOut == true) {
+                        window.location = "/Account/LockOutPage";
+                    }
+                    else if (data.isNotAllowed == true) {
+                        window.location = "/Account/EmailNotComfirmedPage";
+                    }
+                    else if (data.requiresTwoFactor == true) {
+
+                    }
+                    else {
+                        alert("Email address or password are incorrect.");
+                        window.location = "/";
+                    }
+                    window.data = data;
+                },
+                fail: function (xhr, status, error) {
+                    // error handling
+                    window.data = null;
+                },
+            });
+            return window.data;
+        };
+        window.Logout = (url) => {
+            $.ajax({
+                url: url,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                type: 'GET',
+                //data: JSON.stringify(_data),
+                success: function (data) {
+                    window.location = "/";
+                    //return data;
+                },
+                fail: function (xhr, status, error) {
+                    // error handling
+                    alert(status);
+                },
+            });
+        }
+        //function Logout() {
+        //    var url = window.location.protocol + "//" + window.location.hostname + ":" + window.location.port + "/api/LoginAPI";
+        //    $.ajax({
+        //        url: url,
+        //        contentType: "application/json; charset=utf-8",
+        //        dataType: "json",
+        //        type: 'GET',
+        //        //data: JSON.stringify(_data),
+        //        success: function (data) {
+        //            window.location = "/";
+        //            //return data;
+        //        },
+        //        fail: function (xhr, status, error) {
+        //            // error handling
+        //            alert(status);
+        //        },
+        //    });
+        //}
+        function saveAsFile(filename, bytesBase64) {
+
+            if (navigator.msSaveBlob) {
+                //Download document in Edge browser
+                var data = window.atob(bytesBase64);
+                var bytes = new Uint8Array(data.length);
+                for (var i = 0; i < data.length; i++) {
+                    bytes[i] = data.charCodeAt(i);
+                }
+                var blob = new Blob([bytes.buffer], { type: "application/octet-stream" });
+                navigator.msSaveBlob(blob, filename);
+            }
+            else {
+                var link = document.createElement('a');
+                link.download = filename;
+                link.href = "data:application/octet-stream;base64," + bytesBase64;
+                document.body.appendChild(link); // Needed for Firefox
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        window.initializeCarousel = () => {
+            $('#carouselExampleIndicators').carousel({ interval: 3000 });
+
+            //see step 2 to understand these news id's:
+            $('#carouselExampleIndicators-prev').click(
+                () => $('#carouselExampleIndicators').carousel('prev'));
+            $('#carouselExampleIndicators-next').click(
+                () => $('#carouselExampleIndicators').carousel('next'));
+
+        }
+    </script>
+</body>
+</html>
