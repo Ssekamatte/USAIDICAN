@@ -196,20 +196,27 @@ using Syncfusion.Blazor.Maps;
 #nullable disable
 #nullable restore
 #line 3 "D:\MVCProjects\BlazorProject\USAIDICAN\USAIDICANBLAZOR16June2022\USAIDICANBLAZOR\Pages\Account\ForgotPasswordPage.razor"
-using USAIDICANBLAZOR.Models;
+using USAIDICANBLAZOR.EmailScheduler;
 
 #line default
 #line hidden
 #nullable disable
 #nullable restore
 #line 4 "D:\MVCProjects\BlazorProject\USAIDICAN\USAIDICANBLAZOR16June2022\USAIDICANBLAZOR\Pages\Account\ForgotPasswordPage.razor"
-using System.Net;
+using USAIDICANBLAZOR.Models;
 
 #line default
 #line hidden
 #nullable disable
 #nullable restore
 #line 5 "D:\MVCProjects\BlazorProject\USAIDICAN\USAIDICANBLAZOR16June2022\USAIDICANBLAZOR\Pages\Account\ForgotPasswordPage.razor"
+using System.Net;
+
+#line default
+#line hidden
+#nullable disable
+#nullable restore
+#line 6 "D:\MVCProjects\BlazorProject\USAIDICAN\USAIDICANBLAZOR16June2022\USAIDICANBLAZOR\Pages\Account\ForgotPasswordPage.razor"
 using System.Net.Mail;
 
 #line default
@@ -224,10 +231,11 @@ using System.Net.Mail;
         }
         #pragma warning restore 1998
 #nullable restore
-#line 68 "D:\MVCProjects\BlazorProject\USAIDICAN\USAIDICANBLAZOR16June2022\USAIDICANBLAZOR\Pages\Account\ForgotPasswordPage.razor"
+#line 71 "D:\MVCProjects\BlazorProject\USAIDICAN\USAIDICANBLAZOR16June2022\USAIDICANBLAZOR\Pages\Account\ForgotPasswordPage.razor"
        
     string emailAddress { get; set; }
     string Returnmessage { get; set; }
+
     private void BackToLoginClick()
     {
         NavManager.NavigateTo("/", true);
@@ -257,29 +265,32 @@ using System.Net.Mail;
                         string encrypted = Convert.ToBase64String(b);
                         string _message = url + "ExternalResetPasswordPage/" + encrypted;
 
-                        using (var message = new MailMessage("donotreply@ibs.co.ug", emailAddress))
-                        {
-                            message.Subject = "PAU Password Reset";
-                            message.Body = "Dear "+ userexists.NameOfUserAccountHolder+ ",<br/><br/>" +
-                                    "<p> You recently requested a password reset with us.</p>" +
-                                    "<br/> <p>Please click <a href='" + _message + "'>here</a> to be directed to a page to reset your password. Thanks!</p>" +
-                                    "<br/> <br/> Regards,<br/><br/> System notfication, <br/> Petrolium Authority of Uganda.<br/><br/>" + DateTime.Now;
-                            message.IsBodyHtml = true;
-                            using (SmtpClient client = new SmtpClient
-                            {
-                                EnableSsl = false,
-                                //Host = "smtp.gmail.com",
-                                Host = "mail.ibs.co.ug",
-                                //Port = 587,
-                                Port = 25,
+                        //using (var message = new MailMessage(SenderEmail, emailAddress))
+                        //{
+                        //    message.Subject = "Dashboard System Password Reset";
+                        //    message.Body = "Dear "+ userexists.NameOfUserAccountHolder+ ",<br/><br/>" +
+                        //            "<p> You recently requested a password reset with us.</p>" +
+                        //            "<br/> <p>Please click <a href='" + _message + "'>here</a> to be directed to a page to reset your password. Thanks!</p>" +
+                        //            "<br/> <br/> Regards,<br/><br/> System Notfication, <br/> Integrated Community Agriculture and Nutrition Activity (USAID - ICAN).<br/><br/>" + DateTime.Now;
+                        //    message.IsBodyHtml = true;
+                        //    using (SmtpClient client = new SmtpClient
+                        //    {
+                        //            EnableSsl = EnableSSL,
+                        //            Host = SenderHost,
+                        //            Port = SenderPort,
+                        //            DeliveryMethod = SmtpDeliveryMethod.Network,
+                        //            Credentials = new NetworkCredential(SenderEmail, SenderPassword)
+                        //    })
+                        //    {
+                        //        //client.EnableSsl = true;
+                        //        client.Send(message);
+                        //    }
+                        //}
+                        
+                        EmailModel email = new EmailModel(db);
 
-                                Credentials = new NetworkCredential("donotreply@ibs.co.ug", "**Root@85")
-                            })
-                            {
-                                //client.EnableSsl = true;
-                                client.Send(message);
-                            }
-                        }
+                        email.ForgotPasswordEmail(userexists.NameOfUserAccountHolder, emailAddress, _message);
+
                         Returnmessage = "Success: Reset instructions have been sent to your email.";
                     }
                     else
@@ -299,6 +310,7 @@ using System.Net.Mail;
 #line default
 #line hidden
 #nullable disable
+        [global::Microsoft.AspNetCore.Components.InjectAttribute] private EmailModel sendmail { get; set; }
         [global::Microsoft.AspNetCore.Components.InjectAttribute] private NavigationManager NavManager { get; set; }
     }
 }

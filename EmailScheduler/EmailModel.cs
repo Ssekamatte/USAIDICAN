@@ -1023,6 +1023,39 @@ namespace USAIDICANBLAZOR.EmailScheduler
             {
                 throw ex;
             }
-        }       
+        }
+
+        public void ForgotPasswordEmail(string username, string emailAddress, string _message)
+        {
+            try
+            {
+                using (var message = new MailMessage(SenderEmail, emailAddress))
+                {
+                    message.Subject = "Dashboard System Password Reset";
+                    message.Body = "Dear " + username + ",<br/><br/>" +
+                            "<p> You recently requested a password reset with us.</p>" +
+                            "<br/> <p>Please click <a href='" + _message + "'>here</a> to be directed to a page to reset your password. Thanks!</p>" +
+                            "<br/> <br/> Regards,<br/><br/> System Notification, <br/> Integrated Community Agriculture and Nutrition Activity (USAID - ICAN).<br/><br/>" + DateTime.Now;
+                    message.IsBodyHtml = true;
+                    
+                    using (SmtpClient client = new SmtpClient
+                    {
+                        EnableSsl = EnableSSL,
+                        Host = SenderHost,
+                        Port = SenderPort,
+                        DeliveryMethod = SmtpDeliveryMethod.Network,
+                        Credentials = new NetworkCredential(SenderEmail, SenderPassword)
+                    })
+                    {
+                        client.Send(message);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
     }
 }

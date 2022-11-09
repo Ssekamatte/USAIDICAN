@@ -31,6 +31,7 @@ using static USAIDICANBLAZOR.Pages.DataPages.PerformanceIndicators;
 using static USAIDICANBLAZOR.Pages.DataPages.PopulationUploadPage;
 using static USAIDICANBLAZOR.Pages.DataPages.TargetUtilitiesPage;
 using static USAIDICANBLAZOR.Pages.DataPages.AddIndicatorPage;
+using USAIDICANBLAZOR.EmailScheduler;
 
 namespace USAIDICANBLAZOR
 {
@@ -66,6 +67,7 @@ namespace USAIDICANBLAZOR
                 options.Lockout.AllowedForNewUsers = true;
             });
 
+            services.AddScoped<EmailModel>();
             services.AddRazorPages();
             services.AddServerSideBlazor();
             services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<IdentityUser>>();
