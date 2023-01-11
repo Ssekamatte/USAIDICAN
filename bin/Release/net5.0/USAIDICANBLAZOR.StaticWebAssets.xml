@@ -1,0 +1,23 @@
+﻿<StaticWebAssets Version="1.0">
+  <ContentRoot BasePath="/" Path="D:\MVCProjects\BlazorProject\USAIDICAN\USAIDICANBLAZOR16June2022\USAIDICANBLAZOR\obj\Release\net5.0\scopedcss\bundle\" />
+  <ContentRoot BasePath="/Identity" Path="C:\Users\sseka\.nuget\packages\microsoft.aspnetcore.identity.ui\5.0.14\staticwebassets\V4\" />
+  <ContentRoot BasePath="_content/Blazored.Toast" Path="C:\Users\sseka\.nuget\packages\blazored.toast\3.2.2\build\..\staticwebassets\" />
+  <ContentRoot BasePath="_content/BlazorStrap" Path="C:\Users\sseka\.nuget\packages\blazorstrap\1.5.1\build\..\staticwebassets\" />
+  <ContentRoot BasePath="_content/Syncfusion.Blazor.Calendars" Path="C:\Users\sseka\.nuget\packages\syncfusion.blazor.calendars\19.4.0.56\build\..\staticwebassets\" />
+  <ContentRoot BasePath="_content/Syncfusion.Blazor.Core" Path="C:\Users\sseka\.nuget\packages\syncfusion.blazor.core\19.4.0.56\build\..\staticwebassets\" />
+  <ContentRoot BasePath="_content/Syncfusion.Blazor.Data" Path="C:\Users\sseka\.nuget\packages\syncfusion.blazor.data\19.4.0.56\build\..\staticwebassets\" />
+  <ContentRoot BasePath="_content/Syncfusion.Blazor.DropDowns" Path="C:\Users\sseka\.nuget\packages\syncfusion.blazor.dropdowns\19.4.0.56\build\..\staticwebassets\" />
+  <ContentRoot BasePath="_content/Syncfusion.Blazor.Grid" Path="C:\Users\sseka\.nuget\packages\syncfusion.blazor.grid\19.4.0.56\build\..\staticwebassets\" />
+  <ContentRoot BasePath="_content/Syncfusion.Blazor.InPlaceEditor" Path="C:\Users\sseka\.nuget\packages\syncfusion.blazor.inplaceeditor\19.4.0.56\build\..\staticwebassets\" />
+  <ContentRoot BasePath="_content/Syncfusion.Blazor.Inputs" Path="C:\Users\sseka\.nuget\packages\syncfusion.blazor.inputs\19.4.0.56\build\..\staticwebassets\" />
+  <ContentRoot BasePath="_content/Syncfusion.Blazor.Layouts" Path="C:\Users\sseka\.nuget\packages\syncfusion.blazor.layouts\19.4.0.56\build\..\staticwebassets\" />
+  <ContentRoot BasePath="_content/Syncfusion.Blazor.Lists" Path="C:\Users\sseka\.nuget\packages\syncfusion.blazor.lists\19.4.0.56\build\..\staticwebassets\" />
+  <ContentRoot BasePath="_content/Syncfusion.Blazor.Maps" Path="C:\Users\sseka\.nuget\packages\syncfusion.blazor.maps\19.4.0.56\build\..\staticwebassets\" />
+  <ContentRoot BasePath="_content/Syncfusion.Blazor.Navigations" Path="C:\Users\sseka\.nuget\packages\syncfusion.blazor.navigations\19.4.0.56\build\..\staticwebassets\" />
+  <ContentRoot BasePath="_content/Syncfusion.Blazor.Notifications" Path="C:\Users\sseka\.nuget\packages\syncfusion.blazor.notifications\19.4.0.56\build\..\staticwebassets\" />
+  <ContentRoot BasePath="_content/Syncfusion.Blazor.PdfViewer" Path="C:\Users\sseka\.nuget\packages\syncfusion.blazor.pdfviewer\19.4.0.56\build\..\staticwebassets\" />
+  <ContentRoot BasePath="_content/Syncfusion.Blazor.Popups" Path="C:\Users\sseka\.nuget\packages\syncfusion.blazor.popups\19.4.0.56\build\..\staticwebassets\" />
+  <ContentRoot BasePath="_content/Syncfusion.Blazor.Spinner" Path="C:\Users\sseka\.nuget\packages\syncfusion.blazor.spinner\19.4.0.56\build\..\staticwebassets\" />
+  <ContentRoot BasePath="_content/Syncfusion.Blazor.SplitButtons" Path="C:\Users\sseka\.nuget\packages\syncfusion.blazor.splitbuttons\19.4.0.56\build\..\staticwebassets\" />
+  <ContentRoot BasePath="_content/Syncfusion.Blazor.Themes" Path="C:\Users\sseka\.nuget\packages\syncfusion.blazor.themes\19.4.0.56\build\..\staticwebassets\" />
+</StaticWebAssets>

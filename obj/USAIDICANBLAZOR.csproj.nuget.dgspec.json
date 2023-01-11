@@ -28,6 +28,7 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -136,6 +137,14 @@
               "target": "Package",
               "version": "[19.4.0.56, )"
             },
+            "Syncfusion.EJ": {
+              "target": "Package",
+              "version": "[19.4.0.56, )"
+            },
+            "Syncfusion.EJ.DashboardViewer.AspNet.Core": {
+              "target": "Package",
+              "version": "[4.1.0.84, )"
+            },
             "Syncfusion.EJ2.AspNet.Core": {
               "target": "Package",
               "version": "[19.4.0.56, )"
@@ -182,7 +191,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.100\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.101\\RuntimeIdentifierGraph.json"
         }
       }
     }

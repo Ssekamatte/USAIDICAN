@@ -50,6 +50,8 @@
     <PackageReference Include="Syncfusion.Blazor.Themes" Version="19.4.0.56" />
     <PackageReference Include="Syncfusion.DocIO.Net.Core" Version="19.4.0.56" />
     <PackageReference Include="Syncfusion.DocIORenderer.Net.Core" Version="19.4.0.56" />
+    <PackageReference Include="Syncfusion.EJ" Version="19.4.0.56" />
+    <PackageReference Include="Syncfusion.EJ.DashboardViewer.AspNet.Core" Version="4.1.0.84" />
     <PackageReference Include="Syncfusion.EJ2.AspNet.Core" Version="19.4.0.56" />
     <PackageReference Include="Syncfusion.EJ2.Spreadsheet.AspNet.Core" Version="19.4.0.56" />
     <PackageReference Include="Syncfusion.XlsIORenderer.Net.Core" Version="19.4.0.56" />
